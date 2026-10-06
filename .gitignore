@@ -90,3 +90,6 @@ typings/
 
 # Electron-Forge
 out/
+
+# Native helpers built from native/ (scripts/build-context-helper.sh)
+build/native/

@@ -1,4 +1,9 @@
 import type { IShortCutMap } from '@appTypes/infra/shortCut';
+import type {
+    ContextMeetingAction,
+    IContextDef,
+    IContextRule,
+} from '@appTypes/infra/contextEngine';
 import type { ISize, IPoint } from '../windowDrag';
 
 /** 可序列化的音频输出设备信息（替代不可序列化的 MediaDeviceInfo） */
@@ -98,6 +103,23 @@ interface _IAppConfig {
     'localMusic.excludedPaths': string[];
     /** 本地音乐：最短时长过滤（秒），低于此值的文件在渲染进程侧过滤 */
     'localMusic.minDurationSec': number;
+
+    /** 情境引擎：是否启用（按当前活动自动选择情境） */
+    'context.enabled': boolean;
+    /** 情境列表（id 稳定，名称可编辑，每个情境关联若干歌单） */
+    'context.contexts': IContextDef[];
+    /** 情境规则（有序，首个匹配生效） */
+    'context.rules': IContextRule[];
+    /** 无规则匹配时使用的情境 id */
+    'context.defaultContextId': string;
+    /** 候选情境需持续多少秒才切换 */
+    'context.debounceSec': number;
+    /** 两次非紧急切换之间的最短间隔（秒） */
+    'context.minDwellSec': number;
+    /** 麦克风占用（会议）时的播放行为 */
+    'context.meetingAction': ContextMeetingAction;
+    /** 手动锁定的情境 id，null 表示自动 */
+    'context.manualOverride': string | null;
 
     /** 不需要用户配置的数据 */
     'private.mainWindowSize': ISize;
