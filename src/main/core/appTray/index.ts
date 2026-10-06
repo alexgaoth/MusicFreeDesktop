@@ -39,6 +39,27 @@ function getLogoPath(): string {
     return path.resolve(globalContext.appPath.res, 'logo.png');
 }
 
+/**
+ * 托盘图标。
+ * [darwin] 使用单色模板图（trayTemplate.png + @2x），系统按菜单栏明暗自动着色；
+ * 其他平台沿用彩色 logo。
+ */
+function createTrayIcon() {
+    if (process.platform === 'darwin') {
+        // 文件名以 Template 结尾时 Electron 会自动标记为模板图，并加载同目录的 @2x 版本
+        const icon = nativeImage.createFromPath(
+            path.resolve(globalContext.appPath.res, 'trayTemplate.png'),
+        );
+        icon.setTemplateImage(true);
+        return icon;
+    }
+
+    return nativeImage.createFromPath(getLogoPath()).resize({
+        width: 32,
+        height: 32,
+    });
+}
+
 // ─── 需要监听的配置 key ───
 
 const OBSERVED_CONFIG_KEYS: Array<keyof IAppConfig> = [
@@ -70,12 +91,7 @@ class AppTray {
         this.setupApplicationMenu();
 
         // 创建托盘图标
-        const tray = new Tray(
-            nativeImage.createFromPath(getLogoPath()).resize({
-                width: 32,
-                height: 32,
-            }),
-        );
+        const tray = new Tray(createTrayIcon());
 
         // 点击行为: 单击/双击展示主窗口，其他平台双击
         tray.on('click', () => {
