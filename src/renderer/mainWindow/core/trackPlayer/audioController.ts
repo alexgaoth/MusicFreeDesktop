@@ -42,7 +42,20 @@ export interface IAudioController extends EventEmitter<IAudioControllerEvents> {
     reset(): void;
     destroy(): void;
 
+    /** 用户音量（持久化、显示在音量条上）。会取消进行中的增益渐变并停在其目标值 */
     setVolume(volume: number): void;
+    /**
+     * 增益：叠加在用户音量上的系数（0…1），实际输出 = 用户音量 × 增益。
+     * 用于淡入淡出 / 闪避（duck），不改变用户音量设置，也不触发 volumeChange。
+     */
+    readonly gain: number;
+    /** 立即设置增益（取消进行中的渐变） */
+    setGain(gain: number): void;
+    /**
+     * 在 ms 毫秒内把增益线性渐变到 target。新的渐变会取消旧的（从当前值继续）。
+     * @returns 完成时 resolve(true)；被取消（新渐变 / setGain / setVolume）时 resolve(false)
+     */
+    rampGain(target: number, ms: number): Promise<boolean>;
     setSpeed(speed: number): void;
     setSinkId(deviceId: string): Promise<void>;
 
@@ -52,15 +65,33 @@ export interface IAudioController extends EventEmitter<IAudioControllerEvents> {
 
 // ─── WebAudioController 实现 ───
 
+/** 增益渐变的步进间隔（ms）。按经过的时间插值，计时器被节流时也能准时结束 */
+const RAMP_STEP_MS = 30;
+
+const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+
+interface IGainRamp {
+    target: number;
+    timer: ReturnType<typeof setInterval>;
+    resolve: (completed: boolean) => void;
+}
+
 class WebAudioController extends EventEmitter<IAudioControllerEvents> implements IAudioController {
     private audio: HTMLAudioElement;
     private hls: Hls | null = null;
     private _playerState: PlayerState = PlayerState.None;
     private _sourceId = 0; // fetch 竞态守卫
     private _currentBlobUrl: string | null = null; // 追踪 blob URL 防止内存泄漏
+    private _userVolume = 1; // 用户音量（持久化值）
+    private _gain = 1; // 渐变 / 闪避增益，不持久化
+    private _ramp: IGainRamp | null = null;
 
     get playerState(): PlayerState {
         return this._playerState;
+    }
+
+    get gain(): number {
+        return this._gain;
     }
 
     get hasSource(): boolean {
@@ -167,7 +198,51 @@ class WebAudioController extends EventEmitter<IAudioControllerEvents> implements
     }
 
     setVolume(volume: number): void {
-        this.audio.volume = Math.max(0, Math.min(1, volume));
+        // 用户调节音量：停止渐变并直接落在目标增益（如闪避中仍保持闪避）
+        this.cancelRamp(true);
+        const next = clamp01(volume);
+        const changed = next !== this._userVolume;
+        this._userVolume = next;
+        this.applyVolume();
+        // 由此处（而非 audio 的 volumechange）上报，避免增益渐变把衰减后的值写进用户设置
+        if (changed) this.emit('volumeChange', next);
+    }
+
+    setGain(gain: number): void {
+        this.cancelRamp(false);
+        this._gain = clamp01(gain);
+        this.applyVolume();
+    }
+
+    rampGain(target: number, ms: number): Promise<boolean> {
+        this.cancelRamp(false);
+        const to = clamp01(target);
+        const from = this._gain;
+        if (ms <= 0 || from === to) {
+            this._gain = to;
+            this.applyVolume();
+            return Promise.resolve(true);
+        }
+
+        const start = performance.now();
+        return new Promise<boolean>((resolve) => {
+            const ramp: IGainRamp = {
+                target: to,
+                resolve,
+                timer: setInterval(() => {
+                    const t = Math.min(1, (performance.now() - start) / ms);
+                    this._gain = from + (to - from) * t;
+                    this.applyVolume();
+                    if (t >= 1 && this._ramp === ramp) {
+                        clearInterval(ramp.timer);
+                        this._ramp = null;
+                        this._gain = to;
+                        resolve(true);
+                    }
+                }, RAMP_STEP_MS),
+            };
+            this._ramp = ramp;
+        });
     }
 
     setSpeed(speed: number): void {
@@ -189,6 +264,7 @@ class WebAudioController extends EventEmitter<IAudioControllerEvents> implements
     }
 
     destroy(): void {
+        this.cancelRamp(false);
         this.destroyHls();
         this.reset();
         this.removeAllListeners();
@@ -227,13 +303,26 @@ class WebAudioController extends EventEmitter<IAudioControllerEvents> implements
             });
         };
 
-        this.audio.onvolumechange = () => {
-            this.emit('volumeChange', this.audio.volume);
-        };
-
         this.audio.onratechange = () => {
             this.emit('speedChange', this.audio.playbackRate);
         };
+    }
+
+    private applyVolume(): void {
+        this.audio.volume = clamp01(this._userVolume * this._gain);
+    }
+
+    /** 取消进行中的渐变；snapToTarget = 直接落到渐变目标值 */
+    private cancelRamp(snapToTarget: boolean): void {
+        const ramp = this._ramp;
+        if (!ramp) return;
+        this._ramp = null;
+        clearInterval(ramp.timer);
+        if (snapToTarget) {
+            this._gain = ramp.target;
+            this.applyVolume();
+        }
+        ramp.resolve(false);
     }
 
     private setPlayerState(state: PlayerState): void {
