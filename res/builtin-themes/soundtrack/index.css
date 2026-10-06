@@ -113,13 +113,13 @@
 .l-app-shell__main {
     background-image:
         radial-gradient(
-            ellipse 75% 420px at 28% -90px,
-            color-mix(in srgb, var(--st-glow) 34%, transparent) 0%,
-            transparent 72%
+            ellipse 80% 460px at 26% -110px,
+            color-mix(in srgb, var(--st-glow) 55%, transparent) 0%,
+            transparent 74%
         ),
         radial-gradient(
-            ellipse 55% 340px at 88% -120px,
-            color-mix(in srgb, var(--st-glow) 20%, transparent) 0%,
+            ellipse 55% 360px at 90% -140px,
+            color-mix(in srgb, var(--st-glow) 32%, transparent) 0%,
             transparent 70%
         );
     background-repeat: no-repeat;
@@ -157,12 +157,11 @@
 }
 
 .l-sidebar__group-title {
-    font-size: var(--text-badge-size);
+    font-size: var(--text-overline-size);
     font-weight: var(--font-weight-semibold);
     letter-spacing: var(--tracking-wide);
-    color: var(--color-text-muted);
-    font-variant-caps: all-small-caps;
-    text-transform: none;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
 }
 
 .l-sidebar__nav-item {
@@ -195,7 +194,6 @@
 /* ─────────────────────────── Player bar: glass ─────────────────────────── */
 
 .l-player-bar__body::before {
-    border-top: 1px solid var(--color-border-default);
     box-shadow: var(--shadow-up);
     backdrop-filter: blur(var(--blur-xl)) saturate(140%);
 }
