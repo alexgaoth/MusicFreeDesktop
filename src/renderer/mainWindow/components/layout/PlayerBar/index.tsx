@@ -19,7 +19,6 @@ import {
 } from '@renderer/mainWindow/core/trackPlayer/hooks';
 import { REPEAT_MODE_MAP } from '@renderer/common/repeatModeMap';
 import { Artwork } from '../../ui/Artwork';
-import { Marquee } from '../../ui/Marquee';
 import { toggleQueueDrawer } from '../QueueDrawer/queueDrawerState';
 import { openFullscreenPlayer } from '../FullscreenPlayer/fullscreenPlayerState';
 import { ProgressBar, TimeDisplay } from './ProgressBar';
@@ -35,8 +34,8 @@ import './index.scss';
  * PlayerBar
  * @layer layout
  *
- * 底部固定播放栏，三列布局：
- * - 左侧：封面 + 歌曲信息（Marquee 滚动）
+ * 底部固定播放栏，三列网格（左右等宽 1fr，中间控制始终居中）：
+ * - 左侧：封面 + 歌曲信息（歌名、歌手各一行，溢出省略）
  * - 中间：播放控制（上/下一首、播放/暂停、播放模式、歌词）
  * - 右侧：音质、倍速气泡、音量气泡、播放列表
  *
@@ -76,35 +75,36 @@ export default function PlayerBar() {
                     <div className="l-player-bar__info">
                         {hasMusic ? (
                             <>
-                                {/* 第一行: 歌名 · 歌手 · 来源 — 点击打开全屏播放器 */}
-                                <Marquee
-                                    className="l-player-bar__info-row"
-                                    onClick={openFullscreenPlayer}
-                                >
-                                    <span className="l-player-bar__title">
+                                {/* 第一行: 歌名（单行省略）+ 喜欢、下载 */}
+                                <div className="l-player-bar__title-row">
+                                    <span
+                                        className="l-player-bar__title"
+                                        title={currentMusic.title}
+                                        onClick={openFullscreenPlayer}
+                                    >
                                         {currentMusic.title}
                                     </span>
+                                    <div className="l-player-bar__track-actions">
+                                        <FavoriteButton musicItem={currentMusic} size="sm" />
+                                        <DownloadButton musicItem={currentMusic} size="sm" />
+                                    </div>
+                                </div>
+                                {/* 第二行: 歌手（单行省略）· 来源 | 时间 */}
+                                <div className="l-player-bar__meta-row">
                                     {currentMusic.artist && (
-                                        <>
-                                            <span className="l-player-bar__dot">·</span>
-                                            <span className="l-player-bar__artist">
-                                                {currentMusic.artist}
-                                            </span>
-                                        </>
+                                        <span
+                                            className="l-player-bar__artist"
+                                            title={currentMusic.artist}
+                                            onClick={openFullscreenPlayer}
+                                        >
+                                            {currentMusic.artist}
+                                        </span>
                                     )}
                                     {currentMusic.platform && (
-                                        <>
-                                            <span className="l-player-bar__dot">·</span>
-                                            <span className="l-player-bar__source-badge">
-                                                {currentMusic.platform}
-                                            </span>
-                                        </>
+                                        <span className="l-player-bar__source-badge">
+                                            {currentMusic.platform}
+                                        </span>
                                     )}
-                                </Marquee>
-                                {/* 第二行: 喜欢、下载、分割线、时间 */}
-                                <div className="l-player-bar__actions">
-                                    <FavoriteButton musicItem={currentMusic} size="sm" />
-                                    <DownloadButton musicItem={currentMusic} size="sm" />
                                     <div className="l-player-bar__divider" />
                                     <TimeDisplay />
                                 </div>

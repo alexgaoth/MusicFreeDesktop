@@ -67,6 +67,18 @@
         text-overflow: ellipsis;
     }
 
+    // Narrow window: icon-only chip (the name is in its tooltip), so the right column fits
+    // in half the bar and the centre controls stay centred.
+    @media (max-width: 1120px) {
+        &__context-chip {
+            padding: 0 var(--space-2);
+        }
+
+        &__context-name {
+            display: none;
+        }
+    }
+
     // ── Menu ──
 
     &__context-menu {

@@ -22,10 +22,14 @@
 
     // ── 三列主体 ──
 
+    // Grid: equal 1fr side columns keep the controls centred whatever the side contents
+    // (a long context name, a long title). The right column never shrinks below its
+    // content; only when it does not fit in half the bar do the controls move left.
     &__body {
         position: relative;
         height: var(--size-player-h);
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);
         align-items: center;
         padding: 0 var(--space-4);
         gap: var(--space-4);
@@ -48,12 +52,11 @@
         display: flex;
         align-items: center;
         gap: var(--space-3);
-        width: 270px;
-        flex-shrink: 0;
         min-width: 0;
     }
 
     &__cover {
+        flex-shrink: 0;
         box-shadow: var(--shadow-lg);
         cursor: pointer;
     }
@@ -66,33 +69,49 @@
         flex: 1;
     }
 
-    &__info-row {
-        cursor: pointer;
-        transition: color var(--duration-fast) var(--ease-standard);
+    // Two rows; title and artist each ellipsize on one line (min-width: 0 lets them shrink)
+    &__title-row,
+    &__meta-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1-5);
+        min-width: 0;
     }
 
     &__title {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
         font-size: var(--text-label-size);
         font-weight: var(--font-weight-semibold);
         color: var(--color-text-primary);
         line-height: 1.375; // leading-snug
         white-space: nowrap;
+        cursor: pointer;
         transition: color var(--duration-fast) var(--ease-standard);
+
+        &:hover {
+            color: var(--color-text-brand);
+        }
     }
 
-    &__dot {
-        font-size: var(--text-caption-size);
-        // 设计稿 text-white/30 — 对应 disabled(0.30)
-        color: var(--color-text-disabled);
-        margin: 0 var(--space-1-5);
-        white-space: nowrap;
+    // Favorite + download: fixed size, never squeezed by a long title
+    &__track-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1-5);
         flex-shrink: 0;
     }
 
     &__artist {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
         font-size: var(--text-caption-size);
         color: var(--color-text-secondary);
+        line-height: 1.5;
         white-space: nowrap;
+        cursor: pointer;
     }
 
     &__source-badge {
@@ -106,13 +125,6 @@
         line-height: 1.25; // leading-tight
         white-space: nowrap;
         vertical-align: middle;
-        flex-shrink: 0;
-    }
-
-    &__actions {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1-5);
         flex-shrink: 0;
     }
 
@@ -146,7 +158,6 @@
     // ── 中间: 播放控制 ──
 
     &__center {
-        flex: 1;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -156,9 +167,6 @@
     // ── 右侧: 工具 ──
 
     &__right {
-        // Grows past 240px only when the Soundtrack context chip is shown.
-        min-width: 240px;
-        flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: flex-end;
