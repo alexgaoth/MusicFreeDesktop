@@ -326,6 +326,8 @@ $scale-icon-2xl: 48px;
     --size-modal-w: 520px;
     --size-modal-w-sm: 400px;
     --size-topbar-h: 64px;
+    // [darwin] 原生红绿灯占用的左侧宽度（trafficLightPosition.x 20px + 3 个按钮及间距 + 留白）
+    --size-traffic-lights-w: 80px;
 
     // ── 2.15 控件尺寸 (Control Sizes) ──
 

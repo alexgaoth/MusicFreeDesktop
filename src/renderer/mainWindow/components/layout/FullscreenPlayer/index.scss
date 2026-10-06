@@ -68,6 +68,11 @@
         align-items: center;
         padding: var(--space-6) var(--space-10);
         -webkit-app-region: drag;
+
+        // [darwin] 收起按钮右移，避开左上角的原生红绿灯
+        body[data-platform='darwin'] & {
+            padding-left: calc(var(--size-traffic-lights-w) + var(--space-2));
+        }
     }
 
     &__close-btn {

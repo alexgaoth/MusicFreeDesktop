@@ -14,6 +14,21 @@
     z-index: var(--z-sidebar);
     padding: var(--space-6) 0 var(--space-6) var(--space-4);
 
+    // [darwin] 原生红绿灯垂直居中于 TopBar 高度内：顶部留出同高的拖拽带，Logo 下移到其下方
+    body[data-platform='darwin'] & {
+        position: relative;
+        padding-top: var(--size-topbar-h);
+    }
+
+    &__drag-region {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--size-topbar-h);
+        -webkit-app-region: drag;
+    }
+
     // ── Logo ──
 
     &__logo {

@@ -17,6 +17,9 @@ import {
 } from '../../../common/searchHistory';
 import './index.scss';
 
+/** [darwin] 使用原生红绿灯，不绘制自定义窗口按钮 */
+const SHOW_WINDOW_CONTROLS = window.globalContext.platform !== 'darwin';
+
 export default function TopBar() {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -234,33 +237,35 @@ export default function TopBar() {
                 )}
             </div>
 
-            {/* ── 右侧: 窗口控制按钮 ── */}
-            <div className="l-topbar__window-controls">
-                <button
-                    className="l-topbar__win-btn"
-                    type="button"
-                    title={t('app.minimize')}
-                    onClick={handleMinimize}
-                >
-                    <Minus size={14} strokeWidth={1.5} />
-                </button>
-                <button
-                    className="l-topbar__win-btn"
-                    type="button"
-                    title={t('app.maximize')}
-                    onClick={handleMaximize}
-                >
-                    <Square size={10} strokeWidth={1.5} />
-                </button>
-                <button
-                    className="l-topbar__win-btn l-topbar__win-btn--close"
-                    type="button"
-                    title={t('common.close')}
-                    onClick={handleClose}
-                >
-                    <X size={14} strokeWidth={1.5} />
-                </button>
-            </div>
+            {/* ── 右侧: 窗口控制按钮（macOS 使用原生红绿灯） ── */}
+            {SHOW_WINDOW_CONTROLS && (
+                <div className="l-topbar__window-controls">
+                    <button
+                        className="l-topbar__win-btn"
+                        type="button"
+                        title={t('app.minimize')}
+                        onClick={handleMinimize}
+                    >
+                        <Minus size={14} strokeWidth={1.5} />
+                    </button>
+                    <button
+                        className="l-topbar__win-btn"
+                        type="button"
+                        title={t('app.maximize')}
+                        onClick={handleMaximize}
+                    >
+                        <Square size={10} strokeWidth={1.5} />
+                    </button>
+                    <button
+                        className="l-topbar__win-btn l-topbar__win-btn--close"
+                        type="button"
+                        title={t('common.close')}
+                        onClick={handleClose}
+                    >
+                        <X size={14} strokeWidth={1.5} />
+                    </button>
+                </div>
+            )}
         </header>
     );
 }

@@ -221,6 +221,16 @@ app.on('activate', () => {
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
         windowManager.showWindow('main');
+        return;
+    }
+
+    // [darwin] 主窗口被红绿灯 / Cmd+W 隐藏（closeBehavior=minimize）时，点击 Dock 图标恢复它
+    if (
+        windowManager.isWindowExist('main') &&
+        !windowManager.isWindowVisible('main') &&
+        !windowManager.isMinimode()
+    ) {
+        windowManager.showWindow('main');
     }
 });
 
