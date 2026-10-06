@@ -6,11 +6,32 @@ import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-nati
 import { WebpackPlugin } from '@electron-forge/plugin-webpack';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { execFileSync } from 'child_process';
+import fs from 'fs';
 import path from 'path';
 
 import { mainConfig } from './config/webpack.main.config';
 import { rendererConfig } from './config/webpack.renderer.config';
 import { preloadConfig } from './config/webpack.preload.config';
+
+/** macOS context signal helper (see native/context-helper/main.swift); never committed */
+const contextHelperPath = path.resolve(__dirname, 'build/native/context-helper');
+
+/**
+ * Build the context helper with swiftc. `fatal` = throw on failure (packaging);
+ * otherwise log a warning and continue (dev start: the engine runs without it).
+ */
+function buildContextHelper(arch: string, fatal: boolean) {
+    if (process.platform !== 'darwin') return;
+    try {
+        execFileSync('bash', [path.resolve(__dirname, 'scripts/build-context-helper.sh'), arch], {
+            stdio: 'inherit',
+        });
+    } catch (e) {
+        if (fatal) throw e;
+        console.warn('[context-helper] build failed, context engine will run without it', e);
+    }
+}
 
 const config: ForgeConfig = {
     packagerConfig: {
@@ -20,7 +41,10 @@ const config: ForgeConfig = {
         appBundleId: 'fun.upup.musicfree',
         icon: path.resolve(__dirname, 'res/logo'),
         executableName: 'MusicFree',
-        extraResource: [path.resolve(__dirname, 'res')],
+        extraResource: [
+            path.resolve(__dirname, 'res'),
+            ...(process.platform === 'darwin' ? [contextHelperPath] : []),
+        ],
         protocols: [
             {
                 name: 'MusicFree',
@@ -29,6 +53,20 @@ const config: ForgeConfig = {
         ],
     },
     rebuildConfig: {},
+    hooks: {
+        // Runs on `start` and `package`: build for the target arch, non-fatal.
+        generateAssets: async (_forgeConfig, _platform, arch) => {
+            buildContextHelper(arch, false);
+        },
+        // Packaging for macOS must ship the helper: retry and fail loudly.
+        prePackage: async (_forgeConfig, platform, arch) => {
+            if (platform !== 'darwin') return;
+            buildContextHelper(arch, true);
+            if (!fs.existsSync(contextHelperPath)) {
+                throw new Error(`context helper missing: ${contextHelperPath}`);
+            }
+        },
+    },
     makers: [
         new MakerDMG({
             format: 'ULFO',
