@@ -35,6 +35,9 @@ const FOOTER_TOOLS: { key: RoutePath; icon: LucideIcon; titleKey: string }[] = [
     { key: RoutePaths.Setting, icon: Settings, titleKey: 'settings.title' },
 ];
 
+/** [darwin] 原生红绿灯位于侧边栏左上角，需要额外的拖拽区域 */
+const IS_MAC = window.globalContext.platform === 'darwin';
+
 export default function Sidebar() {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -51,6 +54,8 @@ export default function Sidebar() {
 
     return (
         <aside className="l-sidebar">
+            {IS_MAC && <div className="l-sidebar__drag-region" />}
+
             {/* ── Logo ── */}
             <div className="l-sidebar__logo">
                 <svg

@@ -24,6 +24,11 @@ interface IEvents {
 class I18n {
     public readonly t = i18nInstance.t.bind(i18nInstance);
 
+    /** 当前生效的界面语言（可能来自用户选择，也可能由系统语言推断） */
+    public get language(): string {
+        return i18nInstance.language;
+    }
+
     private readonly eventEmitter = new EventEmitter<IEvents>();
 
     private readonly ns = 'translation';
@@ -107,26 +112,42 @@ class I18n {
     }
 
     private resolveDefaultLang(preferredLanguage?: string | null) {
-        let defaultLang = preferredLanguage;
-
-        if (defaultLang && !this.allLangNames.includes(defaultLang)) {
-            defaultLang = undefined;
+        // 用户显式选择过语言（且资源存在）时始终尊重该选择
+        if (preferredLanguage && this.allLangNames.includes(preferredLanguage)) {
+            return preferredLanguage;
         }
 
-        if (!defaultLang) {
-            const appLocale = app.getLocale();
-            if (this.allLangNames.includes(appLocale)) {
-                defaultLang = appLocale;
-            } else if (appLocale.includes('zh') && this.allLangNames.includes('zh-CN')) {
-                defaultLang = 'zh-CN';
-            } else if (this.allLangNames.includes('en-US')) {
-                defaultLang = 'en-US';
-            } else {
-                defaultLang = 'zh-CN';
+        return this.resolveSystemLang();
+    }
+
+    /**
+     * 按系统首选语言推断界面语言：
+     *  - 中文系统：繁体（Hant / TW / HK / MO）→ zh-TW，其余 → zh-CN
+     *  - 其他系统：有同名语言包则使用，否则回退到 en-US
+     */
+    private resolveSystemLang(): string {
+        const systemLocale = app.getPreferredSystemLanguages()[0] || app.getLocale() || '';
+        const has = (lang: string) => this.allLangNames.includes(lang);
+
+        if (/^zh(?:[-_]|$)/i.test(systemLocale)) {
+            const isTraditional = /^zh[-_](hant|tw|hk|mo)\b/i.test(systemLocale);
+            if (isTraditional && has('zh-TW')) {
+                return 'zh-TW';
+            }
+            if (has('zh-CN')) {
+                return 'zh-CN';
             }
         }
 
-        return defaultLang;
+        if (has(systemLocale)) {
+            return systemLocale;
+        }
+
+        if (has('en-US')) {
+            return 'en-US';
+        }
+
+        return 'zh-CN';
     }
 
     private getResPath(resourceName: string) {

@@ -60,7 +60,18 @@
         "skip_version": "Don't remind me for this version",
         "go_download": "Download",
         "download_link": "Download {{index}}",
-        "read_more": "Read more"
+        "read_more": "Read more",
+        "about": "About {{name}}",
+        "hide": "Hide {{name}}",
+        "hide_others": "Hide Others",
+        "show_all": "Show All",
+        "services": "Services",
+        "quit": "Quit {{name}}",
+        "view": "View",
+        "toggle_fullscreen": "Toggle Full Screen",
+        "window": "Window",
+        "zoom": "Zoom",
+        "bring_all_to_front": "Bring All to Front"
     },
     "search": {
         "placeholder": "Search songs, artists, albums...",

@@ -39,6 +39,27 @@ function getLogoPath(): string {
     return path.resolve(globalContext.appPath.res, 'logo.png');
 }
 
+/**
+ * 托盘图标。
+ * [darwin] 使用单色模板图（trayTemplate.png + @2x），系统按菜单栏明暗自动着色；
+ * 其他平台沿用彩色 logo。
+ */
+function createTrayIcon() {
+    if (process.platform === 'darwin') {
+        // 文件名以 Template 结尾时 Electron 会自动标记为模板图，并加载同目录的 @2x 版本
+        const icon = nativeImage.createFromPath(
+            path.resolve(globalContext.appPath.res, 'trayTemplate.png'),
+        );
+        icon.setTemplateImage(true);
+        return icon;
+    }
+
+    return nativeImage.createFromPath(getLogoPath()).resize({
+        width: 32,
+        height: 32,
+    });
+}
+
 // ─── 需要监听的配置 key ───
 
 const OBSERVED_CONFIG_KEYS: Array<keyof IAppConfig> = [
@@ -70,12 +91,7 @@ class AppTray {
         this.setupApplicationMenu();
 
         // 创建托盘图标
-        const tray = new Tray(
-            nativeImage.createFromPath(getLogoPath()).resize({
-                width: 32,
-                height: 32,
-            }),
-        );
+        const tray = new Tray(createTrayIcon());
 
         // 点击行为: 单击/双击展示主窗口，其他平台双击
         tray.on('click', () => {
@@ -386,66 +402,60 @@ class AppTray {
     // ─── macOS 应用菜单 ───
 
     private setupApplicationMenu(): void {
-        if (process.platform === 'darwin') {
-            Menu.setApplicationMenu(
-                Menu.buildFromTemplate([
-                    {
-                        label: app.getName(),
-                        submenu: [
-                            {
-                                label: i18n.t('common.about'),
-                                role: 'about',
-                            },
-                            {
-                                label: i18n.t('common.exit'),
-                                click() {
-                                    app.quit();
-                                },
-                            },
-                        ],
-                    },
-                    {
-                        label: i18n.t('common.edit'),
-                        submenu: [
-                            {
-                                label: i18n.t('common.undo'),
-                                accelerator: 'Command+Z',
-                                role: 'undo',
-                            },
-                            {
-                                label: i18n.t('common.redo'),
-                                accelerator: 'Shift+Command+Z',
-                                role: 'redo',
-                            },
-                            { type: 'separator' },
-                            {
-                                label: i18n.t('common.cut'),
-                                accelerator: 'Command+X',
-                                role: 'cut',
-                            },
-                            {
-                                label: i18n.t('common.copy'),
-                                accelerator: 'Command+C',
-                                role: 'copy',
-                            },
-                            {
-                                label: i18n.t('common.paste'),
-                                accelerator: 'Command+V',
-                                role: 'paste',
-                            },
-                            { type: 'separator' },
-                            {
-                                label: i18n.t('common.select_all'),
-                                accelerator: 'Command+A',
-                                role: 'selectAll',
-                            },
-                        ],
-                    },
-                ]),
-            );
-        } else {
+        if (process.platform !== 'darwin') {
             Menu.setApplicationMenu(null);
+            return;
         }
+
+        // 使用标准 role，让 Cmd+H / Cmd+M / Cmd+W / Cmd+Q 等快捷键与系统行为一致
+        const name = app.getName();
+        Menu.setApplicationMenu(
+            Menu.buildFromTemplate([
+                {
+                    label: name,
+                    submenu: [
+                        { label: i18n.t('app.about', { name }), role: 'about' },
+                        { type: 'separator' },
+                        { label: i18n.t('app.services'), role: 'services' },
+                        { type: 'separator' },
+                        { label: i18n.t('app.hide', { name }), role: 'hide' },
+                        { label: i18n.t('app.hide_others'), role: 'hideOthers' },
+                        { label: i18n.t('app.show_all'), role: 'unhide' },
+                        { type: 'separator' },
+                        { label: i18n.t('app.quit', { name }), role: 'quit' },
+                    ],
+                },
+                {
+                    label: i18n.t('common.edit'),
+                    submenu: [
+                        { label: i18n.t('common.undo'), role: 'undo' },
+                        { label: i18n.t('common.redo'), role: 'redo' },
+                        { type: 'separator' },
+                        { label: i18n.t('common.cut'), role: 'cut' },
+                        { label: i18n.t('common.copy'), role: 'copy' },
+                        { label: i18n.t('common.paste'), role: 'paste' },
+                        { type: 'separator' },
+                        { label: i18n.t('common.select_all'), role: 'selectAll' },
+                    ],
+                },
+                {
+                    label: i18n.t('app.view'),
+                    submenu: [{ label: i18n.t('app.toggle_fullscreen'), role: 'togglefullscreen' }],
+                },
+                {
+                    label: i18n.t('app.window'),
+                    role: 'windowMenu',
+                    submenu: [
+                        { label: i18n.t('app.minimize'), role: 'minimize' },
+                        { label: i18n.t('app.zoom'), role: 'zoom' },
+                        { type: 'separator' },
+                        { label: i18n.t('common.close'), role: 'close' },
+                        { type: 'separator' },
+                        { label: i18n.t('app.bring_all_to_front'), role: 'front' },
+                    ],
+                },
+            ]),
+        );
     }
 
     // ─── 调试模式快速点击 ───

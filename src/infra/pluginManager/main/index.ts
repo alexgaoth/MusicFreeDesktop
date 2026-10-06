@@ -45,6 +45,7 @@ import {
 import { PluginStorage } from './pluginStorage';
 import { methodNormalizers } from './normalizer';
 import type { IAppConfigReader } from '@appTypes/infra/appConfig';
+import i18n from '@infra/i18n/main';
 import type { IMediaMetaProvider } from '@appTypes/infra/mediaMeta';
 import type { IMusicItemProvider } from '@appTypes/infra/musicSheet';
 import { getLyricAdapter, type IGetLyricParams } from './getLyricAdapter';
@@ -704,7 +705,12 @@ class PluginManager {
             },
             getLang: () => {
                 try {
-                    return this.appConfigReader?.getConfigByKey('normal.language') ?? '';
+                    // 未显式选择语言时，回退到 i18n 按系统语言推断出的当前语言
+                    return (
+                        this.appConfigReader?.getConfigByKey('normal.language') ??
+                        i18n.language ??
+                        ''
+                    );
                 } catch {
                     return '';
                 }

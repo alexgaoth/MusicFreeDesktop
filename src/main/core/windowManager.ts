@@ -99,6 +99,14 @@ function evaluateLyricHeight(fontSize?: number): number {
 const MINIMODE_WIDTH = 420;
 const MINIMODE_HEIGHT = 120;
 
+// ─── macOS 主窗口标题栏 ───
+
+/**
+ * [darwin] 原生红绿灯按钮位置：垂直居中于 TopBar（--size-topbar-h: 64px，按钮高约 14px），
+ * 水平位于 Sidebar 左上角。renderer 侧按 body[data-platform='darwin'] 预留对应空间。
+ */
+const MAC_TRAFFIC_LIGHT_POSITION = { x: 20, y: 25 };
+
 // ─── WindowManager 实现 ───
 
 class WindowManager implements IWindowManager {
@@ -358,7 +366,13 @@ class WindowManager implements IWindowManager {
                 sandbox: false,
                 webviewTag: true,
             },
-            frame: false,
+            // [darwin] 隐藏标题栏但保留原生红绿灯；其他平台保持无边框，由 TopBar 绘制窗口按钮
+            ...(process.platform === 'darwin'
+                ? {
+                      titleBarStyle: 'hidden' as const,
+                      trafficLightPosition: MAC_TRAFFIC_LIGHT_POSITION,
+                  }
+                : { frame: false }),
             icon: nativeImage.createFromPath(getLogoPath()),
         });
 
@@ -412,10 +426,20 @@ class WindowManager implements IWindowManager {
 
         // 关闭行为: 最小化到托盘（真正退出时不拦截）
         mainWindow.on('close', (e) => {
+            const closeBehavior = appConfig.getConfigByKey('normal.closeBehavior');
+
+            // [darwin] 红绿灯关闭按钮 / Cmd+W 不经过 TopBar，这里按配置直接退出应用
             if (
                 !this._isQuitting &&
-                appConfig.getConfigByKey('normal.closeBehavior') === 'minimize'
+                process.platform === 'darwin' &&
+                closeBehavior === 'exit_app'
             ) {
+                e.preventDefault();
+                app.quit();
+                return;
+            }
+
+            if (!this._isQuitting && closeBehavior === 'minimize') {
                 e.preventDefault();
 
                 // https://github.com/maotoumao/MusicFreeDesktop/issues/412

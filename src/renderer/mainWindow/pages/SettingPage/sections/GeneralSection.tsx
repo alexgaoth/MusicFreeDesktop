@@ -19,7 +19,7 @@ import { clearSearchHistory, truncateSearchHistory } from '../../../common/searc
  *         taskbarThumb、musicListHideColumns、缓存
  */
 export function GeneralSection() {
-    const { t } = useTranslation();
+    const { t, i18n: i18next } = useTranslation();
     const [checkUpdate, setCheckUpdate] = useConfigValue('normal.checkUpdate');
     const [closeBehavior, setCloseBehavior] = useConfigValue('normal.closeBehavior');
     const [language, setLanguage] = useConfigValue('normal.language');
@@ -88,7 +88,8 @@ export function GeneralSection() {
                 description={t('settings.general.language_desc')}
                 control={
                     <Select
-                        value={language ?? 'zh-CN'}
+                        // 未显式选择时显示按系统语言推断出的当前语言
+                        value={language ?? i18next.language}
                         onChange={handleChangeLanguage}
                         options={languageOptions}
                     />
