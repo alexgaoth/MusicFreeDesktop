@@ -60,7 +60,18 @@
         "skip_version": "不再提示此版本",
         "go_download": "前往下载",
         "download_link": "下载地址 {{index}}",
-        "read_more": "阅读更多"
+        "read_more": "阅读更多",
+        "about": "关于 {{name}}",
+        "hide": "隐藏 {{name}}",
+        "hide_others": "隐藏其他",
+        "show_all": "全部显示",
+        "services": "服务",
+        "quit": "退出 {{name}}",
+        "view": "显示",
+        "toggle_fullscreen": "切换全屏",
+        "window": "窗口",
+        "zoom": "缩放",
+        "bring_all_to_front": "前置全部窗口"
     },
     "search": {
         "placeholder": "搜索歌曲、歌手、专辑...",
