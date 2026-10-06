@@ -437,6 +437,8 @@
             "new_context_name": "New context",
             "name_placeholder": "Context name",
             "choose_icon": "Choose icon",
+            "choose_color": "Choose colour",
+            "custom_color": "Custom",
             "playlist_count": "Playlists: {{count}}",
             "no_playlists": "No playlists yet. Create one in the sidebar, then pick it here.",
             "delete_context": "Delete context",
