@@ -1,0 +1,372 @@
+// ============================================================================
+// SettingPage — Soundtrack (context) section
+// ============================================================================
+//
+// BEM Block: p-setting (elements prefixed with `context-`)
+
+.p-setting {
+    // ── Shared ──
+
+    &__context-hint {
+        font-size: var(--text-caption-size);
+        line-height: var(--text-caption-leading);
+        color: var(--color-text-muted);
+    }
+
+    &__context-empty {
+        padding: var(--space-4);
+        border: 1px dashed var(--color-border-default);
+        border-radius: var(--radius-card);
+        font-size: var(--text-caption-size);
+        color: var(--color-text-muted);
+        text-align: center;
+    }
+
+    &__context-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    &__context-inline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    &__context-inline-label {
+        font-size: var(--text-caption-size);
+        color: var(--color-text-secondary);
+    }
+
+    &__context-number {
+        flex: none;
+        width: 128px;
+
+        .input__native {
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    // Beats `.p-setting__row-control .input { min-width: 220px }`.
+    &__row-control .p-setting__context-number.input {
+        min-width: 0;
+    }
+
+    &__context-unit {
+        font-size: var(--text-caption-size);
+        color: var(--color-text-muted);
+    }
+
+    // ── Live status ──
+
+    &__context-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: var(--space-3);
+    }
+
+    &__context-stat {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        min-width: 0;
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-card);
+        border: 1px solid var(--color-border-subtle);
+        background: var(--color-fill-subtle);
+    }
+
+    &__context-stat-label {
+        font-size: var(--text-overline-size);
+        line-height: var(--text-overline-leading);
+        font-weight: var(--font-weight-medium);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+    }
+
+    &__context-stat-value {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        font-size: var(--text-body-size);
+        line-height: var(--text-body-leading);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-primary);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__context-stat-name {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1-5);
+        min-width: 0;
+        color: var(--color-text-primary);
+    }
+
+    &__context-stat-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__context-stat-muted {
+        font-weight: var(--font-weight-normal);
+        color: var(--color-text-muted);
+    }
+
+    &__context-stat-live {
+        color: var(--color-text-brand);
+    }
+
+    &__context-stat-caption {
+        font-size: var(--text-caption-size);
+        line-height: var(--text-caption-leading);
+        color: var(--color-text-secondary);
+        font-variant-numeric: tabular-nums;
+    }
+
+    // ── Context items ──
+
+    &__context-item {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4) var(--space-4);
+        border-radius: var(--radius-card);
+        border: 1px solid var(--color-border-subtle);
+        background: var(--color-fill-subtle);
+    }
+
+    &__context-item-head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    &__context-item-meta {
+        margin-left: auto;
+        font-size: var(--text-caption-size);
+        color: var(--color-text-muted);
+        white-space: nowrap;
+    }
+
+    &__context-name {
+        flex: 0 1 260px;
+        min-width: 140px;
+
+        .input__native {
+            font-size: var(--text-label-size);
+            font-weight: var(--font-weight-medium);
+        }
+    }
+
+    &__context-sheets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    // ── Icon picker ──
+
+    &__context-icon-picker {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    &__context-icon-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--size-control-md);
+        height: var(--size-control-md);
+        padding: 0;
+        border-radius: var(--radius-control);
+        border: 1px solid var(--color-border-default);
+        background: var(--color-fill-neutral);
+        color: var(--color-text-primary);
+        cursor: pointer;
+        transition:
+            background-color var(--duration-fast) var(--ease-standard),
+            border-color var(--duration-fast) var(--ease-standard);
+
+        &:hover,
+        &.is-active {
+            background: var(--color-fill-neutral-hover);
+            border-color: var(--color-border-strong);
+        }
+
+        &:focus-visible {
+            outline: none;
+            box-shadow:
+                0 0 0 var(--focus-ring-offset) var(--color-bg-base),
+                var(--focus-ring);
+        }
+    }
+
+    &__context-icon-grid {
+        position: absolute;
+        top: calc(100% + var(--space-2));
+        left: 0;
+        z-index: var(--z-popover);
+        display: grid;
+        grid-template-columns: repeat(6, var(--size-control-sm));
+        gap: var(--space-1);
+        padding: var(--space-2);
+        border-radius: var(--radius-control);
+        border: 1px solid var(--color-border-default);
+        background: var(--color-bg-popover);
+        backdrop-filter: blur(var(--blur-lg));
+        box-shadow: var(--shadow-lg);
+    }
+
+    &__context-icon-option {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--size-control-sm);
+        height: var(--size-control-sm);
+        padding: 0;
+        border: none;
+        border-radius: var(--radius-badge);
+        background: transparent;
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        transition:
+            background-color var(--duration-fast) var(--ease-standard),
+            color var(--duration-fast) var(--ease-standard);
+
+        &:hover {
+            background: var(--color-fill-neutral-hover);
+            color: var(--color-text-primary);
+        }
+
+        &.is-selected {
+            background: var(--color-fill-brand-muted);
+            color: var(--color-text-brand);
+        }
+
+        &:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+    }
+
+    // ── Rules ──
+
+    &__context-rule {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-card);
+        border: 1px solid var(--color-border-subtle);
+        background: var(--color-fill-subtle);
+        transition:
+            opacity var(--duration-fast) var(--ease-standard),
+            border-color var(--duration-fast) var(--ease-standard);
+
+        &.is-disabled .p-setting__context-rule-body {
+            opacity: var(--opacity-disabled);
+        }
+
+        &.is-dragging {
+            opacity: var(--opacity-muted);
+        }
+
+        &.is-drop-target {
+            border-color: var(--color-border-brand);
+        }
+    }
+
+    &__context-rule-head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    &__context-rule-grip {
+        display: flex;
+        align-items: center;
+        margin-left: calc(var(--space-2) * -1);
+        color: var(--color-text-disabled);
+        cursor: grab;
+
+        &:hover {
+            color: var(--color-text-secondary);
+        }
+    }
+
+    &__context-rule-index {
+        min-width: var(--space-5);
+        font-size: var(--text-caption-size);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    // Compact selects: the shared trigger has a 220px min-width.
+    &__context-rule-kind,
+    &__context-rule-target {
+        width: 200px;
+
+        .select__trigger {
+            width: 100%;
+            min-width: 0;
+        }
+    }
+
+    &__context-rule-arrow {
+        flex-shrink: 0;
+        color: var(--color-text-muted);
+    }
+
+    &__context-rule-spacer {
+        flex: 1;
+    }
+
+    &__context-rule-body {
+        padding-left: calc(var(--space-5) + var(--space-4));
+        transition: opacity var(--duration-fast) var(--ease-standard);
+    }
+
+    &__context-rule-editor {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    &__context-apps {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    &__context-app-select {
+        width: 220px;
+
+        .select__trigger {
+            width: 100%;
+        }
+    }
+
+    &__context-bundle-input {
+        width: 260px;
+    }
+
+    &__context-time {
+        width: 120px;
+
+        // The native clock popup does not follow the theme; the field is edited by keyboard.
+        .input__native::-webkit-calendar-picker-indicator {
+            display: none;
+        }
+    }
+
+    &__context-day {
+        min-width: var(--size-control-md);
+        justify-content: center;
+    }
+}

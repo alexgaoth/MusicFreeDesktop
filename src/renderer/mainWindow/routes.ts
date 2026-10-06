@@ -66,3 +66,9 @@ export function artistRoute(platform: string, id: string) {
 export function toplistDetailRoute(platform: string) {
     return `/${RoutePaths.ToplistDetail}/${encodeURIComponent(platform)}`;
 }
+
+/** 设置页；`section` 为设置分区 key（如 'context'），省略时打开默认分区 */
+export function settingRoute(section?: string) {
+    const base = `/${RoutePaths.Setting}`;
+    return section ? `${base}?section=${encodeURIComponent(section)}` : base;
+}
