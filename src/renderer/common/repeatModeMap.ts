@@ -1,4 +1,4 @@
-import { Repeat, Repeat1, Shuffle, type LucideIcon } from 'lucide-react';
+import { Repeat, Repeat1, Shuffle, Sparkles, type LucideIcon } from 'lucide-react';
 import { RepeatMode, REPEAT_MODE_NEXT } from '@common/constant';
 
 export interface RepeatModeEntry {
@@ -26,5 +26,10 @@ export const REPEAT_MODE_MAP: Record<RepeatMode, RepeatModeEntry> = {
         Icon: Repeat1,
         tipKey: 'playback.repeat_loop',
         next: REPEAT_MODE_NEXT[RepeatMode.Loop],
+    },
+    [RepeatMode.Context]: {
+        Icon: Sparkles,
+        tipKey: 'playback.repeat_context',
+        next: REPEAT_MODE_NEXT[RepeatMode.Context],
     },
 };

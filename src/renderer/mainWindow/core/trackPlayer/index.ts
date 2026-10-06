@@ -5,7 +5,7 @@
  * 通过 jotai atoms 驱动 UI，通过 AppSync 同步状态到辅助窗口和主进程。
  */
 import type { IMusicItemSlim } from '@appTypes/infra/musicSheet';
-import { PlayerState, RepeatMode, QUALITY_KEYS } from '@common/constant';
+import { PlayerState, RepeatMode, QUALITY_KEYS, REPEAT_MODE_NEXT } from '@common/constant';
 import { isSameMedia } from '@common/mediaKey';
 import musicItemToSlim from '@common/musicItemToSlim';
 import delay from '@common/delay';
@@ -135,7 +135,9 @@ class TrackPlayer {
         // 2. 恢复持久化状态（localStorage 同步读取，首帧可用）
         const volume = syncKV.get('player.volume') ?? 1;
         const speed = syncKV.get('player.speed') ?? 1;
-        const repeatMode = syncKV.get('player.repeatMode') ?? RepeatMode.Queue;
+        const repeatMode = this.availableRepeatMode(
+            syncKV.get('player.repeatMode') ?? RepeatMode.Queue,
+        );
         const savedMusic = syncKV.get('player.currentMusic');
         const savedProgress = syncKV.get('player.currentProgress') ?? 0;
         const savedQuality = syncKV.get('player.currentQuality') ?? 'standard';
@@ -207,6 +209,13 @@ class TrackPlayer {
                 this.audioController
                     .setSinkId(patch['playMusic.audioOutputDevice']?.deviceId ?? '')
                     .catch(() => {});
+            }
+            // 情境引擎关闭 → 退出情境配乐模式
+            if (
+                patch['context.enabled'] === false &&
+                store.get(repeatModeAtom) === RepeatMode.Context
+            ) {
+                this.setRepeatMode(RepeatMode.Queue);
             }
         });
 
@@ -482,6 +491,7 @@ class TrackPlayer {
 
     setRepeatMode(mode: RepeatMode): void {
         const prev = store.get(repeatModeAtom);
+        mode = this.availableRepeatMode(mode);
 
         if (mode === RepeatMode.Shuffle && prev !== RepeatMode.Shuffle) {
             this.playQueue.enterShuffle();
@@ -496,6 +506,14 @@ class TrackPlayer {
     toggleRepeatMode(): void {
         const current = store.get(repeatModeAtom);
         this.setRepeatMode(REPEAT_MODE_MAP[current].next);
+    }
+
+    /** 情境配乐仅在情境引擎启用时可用；不可用时顺延到循环中的下一个模式 */
+    private availableRepeatMode(mode: RepeatMode): RepeatMode {
+        if (mode === RepeatMode.Context && !appConfig.getConfigByKey('context.enabled')) {
+            return REPEAT_MODE_NEXT[RepeatMode.Context];
+        }
+        return mode;
     }
 
     /** 获取用户歌词偏移（秒） */

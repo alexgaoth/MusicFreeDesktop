@@ -25,13 +25,22 @@ export enum RepeatMode {
     Queue = 'queue-repeat',
     /** 单曲循环 */
     Loop = 'loop',
+    /**
+     * 情境配乐（Soundtrack）：下一首从当前情境的歌单中挑选。
+     * 仅当 `context.enabled` 为 true 时可用；否则 setRepeatMode 跳过此模式。
+     */
+    Context = 'context',
 }
 
-/** RepeatMode 循环切换顺序：Queue → Shuffle → Loop → Queue */
+/**
+ * RepeatMode 循环切换顺序：Queue → Shuffle → Loop → Context → Queue
+ * （情境引擎未启用时跳过 Context）
+ */
 export const REPEAT_MODE_NEXT: Record<RepeatMode, RepeatMode> = {
     [RepeatMode.Queue]: RepeatMode.Shuffle,
     [RepeatMode.Shuffle]: RepeatMode.Loop,
-    [RepeatMode.Loop]: RepeatMode.Queue,
+    [RepeatMode.Loop]: RepeatMode.Context,
+    [RepeatMode.Context]: RepeatMode.Queue,
 };
 
 /** 日志级别 */

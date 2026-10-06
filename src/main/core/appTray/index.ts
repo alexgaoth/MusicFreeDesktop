@@ -65,6 +65,7 @@ function createTrayIcon() {
 const OBSERVED_CONFIG_KEYS: Array<keyof IAppConfig> = [
     'lyric.lockLyric',
     'lyric.enableDesktopLyric',
+    'context.enabled',
 ];
 
 // ─── AppTray 实现 ───
@@ -327,6 +328,20 @@ class AppTray {
                         appSync.sendCommand('set-repeat-mode', RepeatMode.Shuffle);
                     },
                 },
+                // 情境配乐：仅在情境引擎启用时提供
+                ...(appConfig.getConfigByKey('context.enabled')
+                    ? [
+                          {
+                              label: i18n.t('playback.repeat_context'),
+                              id: RepeatMode.Context,
+                              type: 'radio' as const,
+                              checked: repeatMode === RepeatMode.Context,
+                              click: () => {
+                                  appSync.sendCommand('set-repeat-mode', RepeatMode.Context);
+                              },
+                          },
+                      ]
+                    : []),
             ]),
         });
 
