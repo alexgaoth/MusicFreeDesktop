@@ -5,7 +5,7 @@
  * 通过 jotai atoms 驱动 UI，通过 AppSync 同步状态到辅助窗口和主进程。
  */
 import type { IMusicItemSlim } from '@appTypes/infra/musicSheet';
-import { PlayerState, RepeatMode, QUALITY_KEYS } from '@common/constant';
+import { PlayerState, RepeatMode, QUALITY_KEYS, REPEAT_MODE_NEXT } from '@common/constant';
 import { isSameMedia } from '@common/mediaKey';
 import musicItemToSlim from '@common/musicItemToSlim';
 import delay from '@common/delay';
@@ -15,6 +15,7 @@ import pluginManager from '@infra/pluginManager/renderer';
 import appConfig from '@infra/appConfig/renderer';
 import downloadManager from '@infra/downloadManager/renderer';
 import fsUtil from '@infra/fsUtil/renderer';
+import logger from '@infra/logger/renderer';
 import { addToRecentlyPlayed } from '../recentlyPlayed';
 import appSync from '@infra/appSync/renderer/main';
 import { syncKV } from '@renderer/common/kvStore';
@@ -22,7 +23,7 @@ import { REPEAT_MODE_MAP } from '@renderer/common/repeatModeMap';
 import { type IAudioController, createAudioController } from './audioController';
 import PlayQueue from './playQueue';
 import LyricManager from './lyricManager';
-import type { IPlayOptions, IResolveSourceOptions } from './types';
+import type { INextTrackProvider, IPlayOptions, IResolveSourceOptions } from './types';
 import {
     store,
     currentMusicAtom,
@@ -124,6 +125,9 @@ class TrackPlayer {
     /** 同一断点反复截断的最大续播次数，超过则放弃续播交给错误处理 */
     private readonly MAX_TRUNCATION_RETRIES = 3;
 
+    // 情境配乐（RepeatMode.Context）的下一首来源，由 contextPlayback 注入
+    private nextTrackProvider: INextTrackProvider | null = null;
+
     // ─── 启动恢复 ───
 
     async setup(): Promise<void> {
@@ -135,7 +139,9 @@ class TrackPlayer {
         // 2. 恢复持久化状态（localStorage 同步读取，首帧可用）
         const volume = syncKV.get('player.volume') ?? 1;
         const speed = syncKV.get('player.speed') ?? 1;
-        const repeatMode = syncKV.get('player.repeatMode') ?? RepeatMode.Queue;
+        const repeatMode = this.availableRepeatMode(
+            syncKV.get('player.repeatMode') ?? RepeatMode.Queue,
+        );
         const savedMusic = syncKV.get('player.currentMusic');
         const savedProgress = syncKV.get('player.currentProgress') ?? 0;
         const savedQuality = syncKV.get('player.currentQuality') ?? 'standard';
@@ -207,6 +213,13 @@ class TrackPlayer {
                 this.audioController
                     .setSinkId(patch['playMusic.audioOutputDevice']?.deviceId ?? '')
                     .catch(() => {});
+            }
+            // 情境引擎关闭 → 退出情境配乐模式
+            if (
+                patch['context.enabled'] === false &&
+                store.get(repeatModeAtom) === RepeatMode.Context
+            ) {
+                this.setRepeatMode(RepeatMode.Queue);
             }
         });
 
@@ -345,8 +358,9 @@ class TrackPlayer {
         await this.playIndex(Math.max(startIndex, 0));
     }
 
-    /** 手动切到下一首（与 repeatMode 无关，始终前进） */
+    /** 手动切到下一首（始终前进；情境配乐模式下从当前情境挑选） */
     async skipToNext(): Promise<void> {
+        if (await this.playFromProvider()) return;
         if (this.playQueue.isEmpty) {
             this.clearPlayback();
             return;
@@ -366,6 +380,18 @@ class TrackPlayer {
     /** 下一首播放：将歌曲插入当前播放曲目之后 */
     addNext(items: (IMusic.IMusicItem | IMusicItemSlim)[]): void {
         this.playQueue.addNext(items);
+    }
+
+    /** 插入到当前曲目之后并立即播放（队列 UI 保持真实） */
+    async playNext(item: IMusic.IMusicItem | IMusicItemSlim): Promise<void> {
+        this.playQueue.addNext([item]);
+        const index = this.playQueue.findIndex(item);
+        if (index !== -1) await this.playIndex(index);
+    }
+
+    /** 注入情境配乐的下一首来源（null = 移除） */
+    setNextTrackProvider(provider: INextTrackProvider | null): void {
+        this.nextTrackProvider = provider;
     }
 
     /** 从队列中移除歌曲。若移除了当前正在播放的曲目，自动切到下一首或清空 */
@@ -436,6 +462,20 @@ class TrackPlayer {
         // volumeChange 事件会自动更新 atom 和 localStorage
     }
 
+    /** 当前增益（淡入淡出 / 闪避系数，不持久化，不影响用户音量） */
+    getGain(): number {
+        return this.audioController.gain;
+    }
+
+    setGain(gain: number): void {
+        this.audioController.setGain(gain);
+    }
+
+    /** 增益渐变；完成 resolve(true)，被取消 resolve(false) */
+    rampGain(target: number, ms: number): Promise<boolean> {
+        return this.audioController.rampGain(target, ms);
+    }
+
     setSpeed(speed: number): void {
         this.audioController.setSpeed(speed);
     }
@@ -482,6 +522,7 @@ class TrackPlayer {
 
     setRepeatMode(mode: RepeatMode): void {
         const prev = store.get(repeatModeAtom);
+        mode = this.availableRepeatMode(mode);
 
         if (mode === RepeatMode.Shuffle && prev !== RepeatMode.Shuffle) {
             this.playQueue.enterShuffle();
@@ -634,7 +675,7 @@ class TrackPlayer {
 
         if (
             behavior === 'skip' &&
-            this.playQueue.queue.length > 1 &&
+            (this.playQueue.queue.length > 1 || store.get(repeatModeAtom) === RepeatMode.Context) &&
             this.consecutiveErrors < this.MAX_CONSECUTIVE_ERRORS
         ) {
             // 主路径：跳到下一首
@@ -652,6 +693,14 @@ class TrackPlayer {
         }
     }
 
+    /** 情境配乐仅在情境引擎启用时可用；不可用时顺延到循环中的下一个模式 */
+    private availableRepeatMode(mode: RepeatMode): RepeatMode {
+        if (mode === RepeatMode.Context && !appConfig.getConfigByKey('context.enabled')) {
+            return REPEAT_MODE_NEXT[RepeatMode.Context];
+        }
+        return mode;
+    }
+
     /**
      * 一首播放完毕后前进：单曲循环重播，否则播放下一首。
      * 同时作为流截断无法续播时的安全归宿，保证播放始终向前推进。
@@ -666,9 +715,34 @@ class TrackPlayer {
                 restartOnSameMedia: true,
             });
         } else {
+            // 情境配乐：从当前情境挑选
+            if (await this.playFromProvider()) return;
             // 前进到下一首（不用 skipToNext，因为它是手动操作语义）
             await this.playIndex(this.playQueue.getNextIndex());
         }
+    }
+
+    /**
+     * 情境配乐模式：向 provider 要下一首，插入队列并播放。
+     * @returns true = 已处理（已播放，或等待期间用户已切歌）；false = 走普通队列逻辑
+     */
+    private async playFromProvider(): Promise<boolean> {
+        if (store.get(repeatModeAtom) !== RepeatMode.Context || !this.nextTrackProvider) {
+            return false;
+        }
+        const before = store.get(currentMusicAtom);
+        let item: IMusic.IMusicItem | IMusicItemSlim | null = null;
+        try {
+            item = await this.nextTrackProvider();
+        } catch (e) {
+            logger.warn('[TrackPlayer] next track provider failed', e);
+        }
+        // 挑选期间（异步读取歌单）用户已手动切歌 → 尊重用户
+        const after = store.get(currentMusicAtom);
+        if (before !== after && !isSameMedia(before, after)) return true;
+        if (!item) return false;
+        await this.playNext(item);
+        return true;
     }
 
     /**

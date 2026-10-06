@@ -7,6 +7,7 @@
 import appConfig from '@infra/appConfig/renderer';
 import appSync from '@infra/appSync/renderer/main';
 import logger from '@infra/logger/renderer';
+import contextPlayback from '@renderer/mainWindow/core/contextPlayback';
 import systemUtil from '@infra/systemUtil/renderer';
 import { openFullscreenPlayer } from '@renderer/mainWindow/components/layout/FullscreenPlayer/fullscreenPlayerState';
 import router from '@renderer/mainWindow/router';
@@ -29,8 +30,11 @@ export function setupCommandHandlers(): void {
         router.navigate('/' + path);
     });
 
-    // TODO(context-player): switch music on context change (C2). Log only for now.
+    // 情境切换 → 情境配乐（Soundtrack 模式下切歌 / 会议闪避）
     appSync.onCommand('context-changed', (change) => {
         logger.info('[ContextEngine] context-changed', change);
+        contextPlayback.handleContextChange(change).catch((e) => {
+            logger.error('[ContextPlayback] context change failed', e);
+        });
     });
 }

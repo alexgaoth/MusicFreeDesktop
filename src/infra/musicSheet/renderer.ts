@@ -359,6 +359,15 @@ class MusicSheetRenderer {
         return detail;
     }
 
+    /**
+     * 读取歌单歌曲（slim），不影响当前打开的歌单与 UI 状态。
+     * 供情境配乐等后台逻辑使用；歌单不存在时返回空数组。
+     */
+    async getSheetMusicList(sheetId: string): Promise<IMusicItemSlim[]> {
+        const detail = await mod.getSheetDetail(sheetId);
+        return detail?.musicList ?? [];
+    }
+
     getCurrentMusicList(): IMusicItemSlim[] {
         return store.get(musicListAtom);
     }
