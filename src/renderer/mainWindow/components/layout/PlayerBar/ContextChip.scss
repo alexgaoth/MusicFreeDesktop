@@ -1,0 +1,104 @@
+// ============================================================================
+// ContextChip — Soundtrack context chip + menu (player bar)
+// ============================================================================
+//
+// Elements of l-player-bar. The menu reuses the `context-menu` pattern styles.
+
+.l-player-bar {
+    &__context {
+        display: flex;
+        min-width: 0;
+        margin-right: var(--space-1-5);
+    }
+
+    &__context-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1-5);
+        max-width: 132px;
+        height: var(--size-control-sm);
+        padding: 0 var(--space-3) 0 var(--space-2);
+        border: 1px solid var(--color-border-default);
+        border-radius: var(--radius-pill);
+        background-color: var(--color-fill-subtle);
+        color: var(--color-text-secondary);
+        font-size: var(--text-caption-size);
+        font-weight: var(--font-weight-medium);
+        line-height: 1;
+        white-space: nowrap;
+        cursor: pointer;
+        transition:
+            color var(--duration-fast) var(--ease-standard),
+            background-color var(--duration-fast) var(--ease-standard),
+            border-color var(--duration-fast) var(--ease-standard);
+
+        &:hover,
+        &.is-open {
+            color: var(--color-text-primary);
+            background-color: var(--color-fill-subtle-hover);
+            border-color: var(--color-border-strong);
+        }
+
+        &.is-locked {
+            border-color: var(--color-border-brand);
+
+            .l-player-bar__context-icon,
+            .l-player-bar__context-lock {
+                color: var(--color-text-brand);
+            }
+        }
+
+        &:focus-visible {
+            outline: none;
+            box-shadow:
+                0 0 0 var(--focus-ring-offset) var(--color-bg-base),
+                var(--focus-ring);
+        }
+    }
+
+    &__context-icon,
+    &__context-lock {
+        flex-shrink: 0;
+    }
+
+    &__context-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    // ── Menu ──
+
+    &__context-menu {
+        min-width: 200px;
+
+        // The hovered item is brand-filled: keep the "now" dot visible on it.
+        .context-menu__item:hover .l-player-bar__context-now {
+            background-color: var(--color-text-on-brand);
+        }
+    }
+
+    &__context-menu-title {
+        padding: var(--space-1) var(--space-3) var(--space-1-5);
+        font-size: var(--text-overline-size);
+        line-height: var(--text-overline-leading);
+        font-weight: var(--font-weight-medium);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+    }
+
+    &__context-mark {
+        flex-shrink: 0;
+        color: currentColor;
+    }
+
+    &__context-now {
+        flex-shrink: 0;
+        width: 6px;
+        height: 6px;
+        margin-right: var(--space-1);
+        border-radius: var(--radius-pill);
+        background-color: var(--color-fill-brand);
+    }
+}
