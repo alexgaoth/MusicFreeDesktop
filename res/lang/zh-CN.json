@@ -437,6 +437,8 @@
             "new_context_name": "新情境",
             "name_placeholder": "情境名称",
             "choose_icon": "选择图标",
+            "choose_color": "选择颜色",
+            "custom_color": "自定义",
             "playlist_count": "歌单：{{count}}",
             "no_playlists": "还没有歌单。先在侧边栏创建歌单，再在这里选择。",
             "delete_context": "删除情境",

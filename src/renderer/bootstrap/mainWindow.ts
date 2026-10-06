@@ -24,6 +24,7 @@ import localMusic from '@infra/localMusic/renderer';
 import contextEngine from '@infra/contextEngine/renderer';
 import trackPlayer from '@renderer/mainWindow/core/trackPlayer';
 import contextPlayback from '@renderer/mainWindow/core/contextPlayback';
+import themeColors from '@renderer/mainWindow/core/themeColors';
 import { runPostBootstrapTasks } from './postBootstrap';
 import { setupCommandHandlers } from '@renderer/mainWindow/core/commandHandlers';
 import { syncKV } from '@renderer/common/kvStore';
@@ -76,6 +77,9 @@ export default async function bootstrapMainWindow(): Promise<void> {
 
     // Phase 4.5: 情境配乐（依赖 trackPlayer + contextEngine + musicSheet）
     contextPlayback.setup();
+
+    // Phase 4.6: 主题运行时颜色（情境强调色 + 封面光晕），依赖 contextEngine + trackPlayer
+    themeColors.setup();
 
     // Phase 5: 非播放器相关的 command handler
     setupCommandHandlers();

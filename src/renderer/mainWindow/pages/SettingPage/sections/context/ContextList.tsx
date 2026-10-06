@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Heart, ListMusic, Plus, Trash2 } from 'lucide-react';
+import { Check, Heart, ListMusic, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@common/cn';
 import { Badge } from '@renderer/mainWindow/components/ui/Badge';
 import { Button } from '@renderer/mainWindow/components/ui/Button';
@@ -11,37 +11,36 @@ import {
     CONTEXT_ICON_NAMES,
     ContextIcon,
 } from '@renderer/mainWindow/components/business/ContextIcon';
+import { normalizeHexColor } from '@common/color';
+import { CONTEXT_COLOR_PALETTE } from '@infra/contextEngine/common/defaults';
 import { useMusicSheetList } from '@infra/musicSheet/renderer';
 import { DEFAULT_FAVORITE_SHEET_ID } from '@infra/musicSheet/common/constant';
 import {
     addContext,
     deleteContext,
     readContextConfig,
+    resolveContextAccent,
+    resolveContextColor,
     updateContext,
     type IContextConfig,
 } from '@renderer/mainWindow/common/contextConfig';
 import type { IContextDef } from '@appTypes/infra/contextEngine';
 import type { ILocalSheetMeta } from '@appTypes/infra/musicSheet';
 
-// ─── Icon picker ───
+// ─── Popover dismiss (outside click / Escape) ───
 
-interface IconPickerProps {
-    value?: string;
-    onChange: (icon: string) => void;
-}
-
-function IconPicker({ value, onChange }: IconPickerProps) {
-    const { t } = useTranslation();
-    const [open, setOpen] = useState(false);
-    const wrapperRef = useRef<HTMLDivElement>(null);
-
+function usePopoverDismiss(
+    open: boolean,
+    close: () => void,
+    wrapperRef: RefObject<HTMLDivElement | null>,
+) {
     useEffect(() => {
         if (!open) return;
         const onMouseDown = (e: MouseEvent) => {
-            if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
+            if (!wrapperRef.current?.contains(e.target as Node)) close();
         };
         const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setOpen(false);
+            if (e.key === 'Escape') close();
         };
         window.addEventListener('mousedown', onMouseDown);
         document.addEventListener('keydown', onKeyDown);
@@ -49,13 +48,31 @@ function IconPicker({ value, onChange }: IconPickerProps) {
             window.removeEventListener('mousedown', onMouseDown);
             document.removeEventListener('keydown', onKeyDown);
         };
-    }, [open]);
+    }, [open, close, wrapperRef]);
+}
+
+// ─── Icon picker ───
+
+interface IconPickerProps {
+    value?: string;
+    /** Readable context accent, used for the icon on the button */
+    color: string;
+    onChange: (icon: string) => void;
+}
+
+function IconPicker({ value, color, onChange }: IconPickerProps) {
+    const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const close = useCallback(() => setOpen(false), []);
+    usePopoverDismiss(open, close, wrapperRef);
 
     return (
         <div ref={wrapperRef} className="p-setting__context-icon-picker">
             <button
                 type="button"
                 className={cn('p-setting__context-icon-btn', open && 'is-active')}
+                style={{ color }}
                 title={t('settings.context.choose_icon')}
                 aria-label={t('settings.context.choose_icon')}
                 aria-expanded={open}
@@ -85,6 +102,99 @@ function IconPicker({ value, onChange }: IconPickerProps) {
                             <ContextIcon name={name} size={16} />
                         </button>
                     ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Colour picker (curated swatches + custom hex) ───
+
+interface ColorPickerProps {
+    /** Current colour, '#rrggbb' */
+    value: string;
+    onChange: (color: string) => void;
+}
+
+function ColorPicker({ value, onChange }: ColorPickerProps) {
+    const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const [hex, setHex] = useState(value);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const close = useCallback(() => setOpen(false), []);
+    usePopoverDismiss(open, close, wrapperRef);
+
+    useEffect(() => {
+        if (open) setHex(value);
+    }, [open, value]);
+
+    const parsed = normalizeHexColor(hex);
+    const commitHex = () => {
+        if (parsed && parsed !== value) onChange(parsed);
+        else if (!parsed) setHex(value);
+    };
+
+    return (
+        <div ref={wrapperRef} className="p-setting__context-color-picker">
+            <button
+                type="button"
+                className={cn('p-setting__context-color-btn', open && 'is-active')}
+                title={t('settings.context.choose_color')}
+                aria-label={t('settings.context.choose_color')}
+                aria-expanded={open}
+                onClick={() => setOpen((prev) => !prev)}
+            >
+                <span className="p-setting__context-color-dot" style={{ background: value }} />
+            </button>
+            {open && (
+                <div className="p-setting__context-color-panel">
+                    <div className="p-setting__context-color-grid" role="listbox">
+                        {CONTEXT_COLOR_PALETTE.map((color) => (
+                            <button
+                                key={color}
+                                type="button"
+                                role="option"
+                                aria-selected={color === value}
+                                aria-label={color}
+                                title={color}
+                                className={cn(
+                                    'p-setting__context-color-option',
+                                    color === value && 'is-selected',
+                                )}
+                                style={{ background: color }}
+                                onClick={() => {
+                                    onChange(color);
+                                    setOpen(false);
+                                }}
+                            >
+                                {color === value && <Check size={12} strokeWidth={3} />}
+                            </button>
+                        ))}
+                    </div>
+                    <label className="p-setting__context-color-custom">
+                        <span className="p-setting__context-color-custom-label">
+                            {t('settings.context.custom_color')}
+                        </span>
+                        <Input
+                            className="p-setting__context-color-input"
+                            value={hex}
+                            maxLength={7}
+                            spellCheck={false}
+                            placeholder="#7c8cff"
+                            hasError={hex.trim() !== '' && !parsed}
+                            prefix={
+                                <span
+                                    className="p-setting__context-color-dot p-setting__context-color-dot--sm"
+                                    style={{ background: parsed ?? value }}
+                                />
+                            }
+                            onChange={(e) => setHex(e.target.value)}
+                            onBlur={commitHex}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') commitHex();
+                            }}
+                        />
+                    </label>
                 </div>
             )}
         </div>
@@ -145,6 +255,7 @@ function ContextItem({ context, isDefault, ruleCount, sheets }: ContextItemProps
     const selected = new Set(context.sheetIds);
     const knownIds = new Set(sheets.map((sheet) => sheet.id));
     const selectedCount = context.sheetIds.filter((id) => knownIds.has(id)).length;
+    const color = resolveContextColor(context);
 
     const toggleSheet = (sheetId: string) => {
         // Read the latest value: fast clicks can arrive before the config echo re-renders us.
@@ -176,7 +287,12 @@ function ContextItem({ context, isDefault, ruleCount, sheets }: ContextItemProps
             <div className="p-setting__context-item-head">
                 <IconPicker
                     value={context.icon}
+                    color={resolveContextAccent(context)}
                     onChange={(icon) => updateContext(context.id, { icon })}
+                />
+                <ColorPicker
+                    value={color}
+                    onChange={(next) => updateContext(context.id, { color: next })}
                 />
                 <ContextNameInput context={context} />
                 {isDefault && (

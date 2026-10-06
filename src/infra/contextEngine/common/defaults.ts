@@ -15,12 +15,56 @@ export const CONTEXT_ID = {
     IDLE: 'idle',
 } as const;
 
+/**
+ * Curated context colours. Each one reads well on the dark Soundtrack background and keeps
+ * at least 6.5:1 contrast with the dark text drawn on the accent (#090b14).
+ */
+export const CONTEXT_COLORS = {
+    INDIGO: '#7c8cff',
+    VIOLET: '#b48cff',
+    ROSE: '#f58fb5',
+    CORAL: '#ff8a7a',
+    AMBER: '#f5b453',
+    LIME: '#b5e05a',
+    MINT: '#6ee7a0',
+    TEAL: '#3fd0c9',
+    SKY: '#5cb8ff',
+    SLATE: '#a6a9d6',
+} as const;
+
+/** Swatches of the colour picker, in display order */
+export const CONTEXT_COLOR_PALETTE: string[] = Object.values(CONTEXT_COLORS);
+
 export const DEFAULT_CONTEXTS: IContextDef[] = [
-    { id: CONTEXT_ID.FOCUS, name: 'Deep work', icon: 'brain', sheetIds: [] },
-    { id: CONTEXT_ID.WORK, name: 'Light work', icon: 'briefcase', sheetIds: [] },
-    { id: CONTEXT_ID.COMMS, name: 'Communication', icon: 'message-circle', sheetIds: [] },
-    { id: CONTEXT_ID.BREAK, name: 'Break', icon: 'coffee', sheetIds: [] },
-    { id: CONTEXT_ID.IDLE, name: 'Idle', icon: 'moon', sheetIds: [] },
+    {
+        id: CONTEXT_ID.FOCUS,
+        name: 'Deep work',
+        icon: 'brain',
+        color: CONTEXT_COLORS.INDIGO,
+        sheetIds: [],
+    },
+    {
+        id: CONTEXT_ID.WORK,
+        name: 'Light work',
+        icon: 'briefcase',
+        color: CONTEXT_COLORS.TEAL,
+        sheetIds: [],
+    },
+    {
+        id: CONTEXT_ID.COMMS,
+        name: 'Communication',
+        icon: 'message-circle',
+        color: CONTEXT_COLORS.AMBER,
+        sheetIds: [],
+    },
+    {
+        id: CONTEXT_ID.BREAK,
+        name: 'Break',
+        icon: 'coffee',
+        color: CONTEXT_COLORS.CORAL,
+        sheetIds: [],
+    },
+    { id: CONTEXT_ID.IDLE, name: 'Idle', icon: 'moon', color: CONTEXT_COLORS.SLATE, sheetIds: [] },
 ];
 
 /** Editors, IDEs and terminals */

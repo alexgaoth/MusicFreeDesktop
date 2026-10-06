@@ -9,11 +9,14 @@
  *   - `context.defaultContextId` names an existing context
  *   - rules have unique ids and point to an existing context
  *   - `context.manualOverride` is null or an existing context
+ *   - `color` is absent or a canonical '#rrggbb' hex colour
  */
 import { useMemo } from 'react';
 import appConfig from '@infra/appConfig/renderer';
 import { useConfigValue } from '@renderer/common/hooks/useConfigValue';
+import { ensureContrast, normalizeHexColor, parseHexColor, toHexColor } from '@common/color';
 import {
+    CONTEXT_COLOR_PALETTE,
     DEFAULT_CONTEXT_ID,
     DEFAULT_CONTEXTS,
     DEFAULT_DEBOUNCE_SEC,
@@ -56,6 +59,41 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
     });
 }
 
+/** Drop an invalid `color`, store a valid one as '#rrggbb' */
+function withValidColor(ctx: IContextDef): IContextDef {
+    if (ctx.color === undefined) return ctx;
+    const color = normalizeHexColor(ctx.color);
+    if (color === ctx.color) return ctx;
+    const { color: _invalid, ...rest } = ctx;
+    return color ? { ...rest, color } : rest;
+}
+
+/**
+ * Accent colour of a context ('#rrggbb'): its own colour, else the built-in default for its
+ * id (profiles saved before contexts had colours), else a stable palette colour for the id.
+ */
+export function resolveContextColor(ctx: IContextDef): string {
+    const own = normalizeHexColor(ctx.color);
+    if (own) return own;
+    const builtin = DEFAULT_CONTEXTS.find((def) => def.id === ctx.id)?.color;
+    if (builtin) return builtin;
+    let hash = 0;
+    for (const ch of ctx.id) hash = (Math.imul(hash, 31) + ch.charCodeAt(0)) >>> 0;
+    return CONTEXT_COLOR_PALETTE[hash % CONTEXT_COLOR_PALETTE.length];
+}
+
+/** Fixed text colour on the accent in the Soundtrack theme (--color-text-on-brand) */
+const TEXT_ON_ACCENT = { r: 9, g: 11, b: 20 }; // #090b14
+
+/**
+ * Accent of a context as shown in the UI: its colour, lightened when needed so the dark text
+ * on the accent keeps ≥ 4.5:1 (this also keeps it readable on the dark background).
+ */
+export function resolveContextAccent(ctx: IContextDef): string {
+    const rgb = parseHexColor(resolveContextColor(ctx))!;
+    return toHexColor(ensureContrast(rgb, TEXT_ON_ACCENT, 4.5));
+}
+
 function pickDefaultId(contexts: IContextDef[], wanted: unknown): string {
     if (typeof wanted === 'string' && contexts.some((ctx) => ctx.id === wanted)) return wanted;
     if (contexts.some((ctx) => ctx.id === DEFAULT_CONTEXT_ID)) return DEFAULT_CONTEXT_ID;
@@ -71,7 +109,7 @@ export function normalizeContextConfig(raw: Partial<IAppConfig>): IContextConfig
     const rawContexts = raw['context.contexts'];
     const contexts = uniqueById(
         Array.isArray(rawContexts) && rawContexts.length ? rawContexts : DEFAULT_CONTEXTS,
-    );
+    ).map(withValidColor);
     const ids = new Set(contexts.map((ctx) => ctx.id));
     const rawRules = raw['context.rules'];
     const rules = uniqueById(Array.isArray(rawRules) ? rawRules : DEFAULT_RULES);
@@ -184,7 +222,7 @@ export function useContextConfig(): IContextConfig {
 /** Save the context list. Ignored when it would leave no context. */
 export function saveContexts(next: IContextDef[]) {
     const contexts = uniqueById(next).map((ctx) => ({
-        ...ctx,
+        ...withValidColor(ctx),
         name: ctx.name.trim() || ctx.id,
         sheetIds: [...new Set(ctx.sheetIds)],
     }));
@@ -212,7 +250,12 @@ export function updateContext(id: string, patch: Partial<Omit<IContextDef, 'id'>
 export function addContext(name: string, icon: string): string {
     const { contexts } = readContextConfig();
     const id = createId('ctx');
-    saveContexts([...contexts, { id, name, icon, sheetIds: [] }]);
+    // Next palette colour that no context uses yet (cycles when all are taken)
+    const used = new Set(contexts.map(resolveContextColor));
+    const color =
+        CONTEXT_COLOR_PALETTE.find((c) => !used.has(c)) ??
+        CONTEXT_COLOR_PALETTE[contexts.length % CONTEXT_COLOR_PALETTE.length];
+    saveContexts([...contexts, { id, name, icon, color, sheetIds: [] }]);
     return id;
 }
 

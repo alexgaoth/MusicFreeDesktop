@@ -19,6 +19,11 @@ export interface IContextDef {
     name: string;
     /** Optional icon name (lucide icon id or emoji), for the settings UI */
     icon?: string;
+    /**
+     * Optional accent colour, '#rrggbb'. Drives `--mf-context-accent` (Soundtrack theme) while
+     * this context is current. Missing → the built-in default for the id, or a palette colour.
+     */
+    color?: string;
     /** Music sheet ids to play from in this context */
     sheetIds: string[];
 }
