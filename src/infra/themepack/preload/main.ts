@@ -15,7 +15,7 @@
  */
 import path from 'path';
 import fsp from 'fs/promises';
-import { createWriteStream } from 'fs';
+import { createWriteStream, readFileSync } from 'fs';
 import crypto from 'crypto';
 import { contextBridge, ipcRenderer } from 'electron';
 import yauzl from 'yauzl';
@@ -29,6 +29,8 @@ import {
     THEMEPACK_IFRAME_NODE_ID,
     THEMEPACK_DIR_NAME,
     BUILTIN_THEME_DIR_NAME,
+    DEFAULT_BUILTIN_THEME_DIR,
+    THEMEPACK_DEFAULT_APPLIED_KEY,
     IPC,
     CONTEXT_BRIDGE_KEY,
 } from '../common/constant';
@@ -458,9 +460,49 @@ function clearCache(): void {
     localStorage.removeItem(THEMEPACK_STORAGE_KEY);
 }
 
+// ─── 新配置默认主题 ───
+
+/**
+ * 新配置（localStorage 为空，即从未运行过）首次启动时，同步写入内置默认主题的缓存。
+ *
+ * - 只判定一次：判定后写入 THEMEPACK_DEFAULT_APPLIED_KEY，之后不再自动应用，
+ *   因此用户之后选择「默认主题」（清除缓存）也会被保留。
+ * - 已有配置（localStorage 非空）不受影响：没有选过主题的老用户保持原样。
+ * - 同步读取文件，保证首帧即生效，无闪烁。
+ *
+ * @returns 写入的缓存；未应用时返回 null
+ */
+function applyDefaultThemeForNewProfile(): IThemePackCache | null {
+    try {
+        if (localStorage.getItem(THEMEPACK_DEFAULT_APPLIED_KEY)) return null;
+        const isNewProfile = localStorage.length === 0;
+        localStorage.setItem(THEMEPACK_DEFAULT_APPLIED_KEY, '1');
+        if (!isNewProfile) return null;
+
+        const themePackPath = path.resolve(builtinThemeBasePath, DEFAULT_BUILTIN_THEME_DIR);
+        const rawConfig = readFileSync(path.resolve(themePackPath, 'config.json'), 'utf-8');
+        const config: IThemePackConfig = JSON.parse(rawConfig);
+        if (!config.name) return null;
+        const rawCss = readFileSync(path.resolve(themePackPath, 'index.css'), 'utf-8');
+
+        const cache: IThemePackCache = {
+            path: themePackPath,
+            hash: md5(rawConfig),
+            css: replaceAlias(rawCss, themePackPath),
+            blurHash: config.iframe?.app ? (config.blurHash ?? null) : null,
+            hasIframe: !!config.iframe?.app,
+        };
+        localStorage.setItem(THEMEPACK_STORAGE_KEY, JSON.stringify(cache));
+        return cache;
+    } catch {
+        // 内置主题缺失或 localStorage 不可用 → 保持无主题
+        return null;
+    }
+}
+
 // ─── 同步阶段（preload 加载时立即执行） ───
 
-const cachedTheme = readCache();
+const cachedTheme = readCache() ?? applyDefaultThemeForNewProfile();
 if (cachedTheme) {
     // 立即注入 CSS — 首帧即生效
     if (cachedTheme.css) {
