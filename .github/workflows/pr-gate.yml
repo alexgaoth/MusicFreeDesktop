@@ -1,0 +1,44 @@
+name: pr-gate
+
+# Lint, type-check and format-check every PR to dev.
+# Prettier runs only on changed files because many upstream files are not formatted yet.
+
+on:
+    pull_request:
+        branches: [dev]
+    push:
+        branches: [dev]
+
+concurrency:
+    group: pr-gate-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    pr-gate:
+        runs-on: ubuntu-latest
+        env:
+            ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 9
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile --ignore-scripts
+            - name: Lint
+              run: pnpm lint
+            - name: Type-check
+              run: pnpm exec tsc --noEmit -p .
+            - name: Format-check changed files
+              if: github.event_name == 'pull_request'
+              run: |
+                  base=${{ github.event.pull_request.base.sha }}
+                  files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD \
+                      | grep -E '\.(ts|tsx|js|mjs|cjs|scss|css|json|md|yml|yaml)$' || true)
+                  if [ -z "$files" ]; then echo 'No files to check.'; exit 0; fi
+                  echo "$files" | xargs pnpm exec prettier --check --ignore-unknown
