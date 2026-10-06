@@ -5,6 +5,7 @@
  *   - `contextEngine.setup()` 初始化（主窗口 bootstrap 中一次）
  *   - `contextEngine.getState()` / `contextEngine.setManualOverride(id | null)`
  *   - `contextEngine.onContextChanged(cb)` 订阅情境切换（返回取消函数）
+ *   - `contextEngine.getCachedState()` / `contextEngine.onStateUpdated(cb)` 非 React 代码读取缓存状态
  *   - `useCurrentContext()` 在 React 中消费引擎状态
  *
  * 情境定义、规则等配置项通过 appConfig（`context.*`，可用 useConfigValue）读写。
@@ -58,6 +59,18 @@ class ContextEngineRenderer {
     /** 锁定情境；传 null 恢复自动 */
     public setManualOverride(contextId: string | null): Promise<void> {
         return mod.setManualOverride(contextId);
+    }
+
+    /** 渲染进程缓存的引擎状态（不发 IPC）；setup 前为 null */
+    public getCachedState(): IContextEngineState | null {
+        return defaultStore.get(contextStateAtom);
+    }
+
+    /** 订阅缓存状态的更新（含信号快照，较频繁），返回取消函数 */
+    public onStateUpdated(callback: (state: IContextEngineState | null) => void): () => void {
+        return defaultStore.sub(contextStateAtom, () =>
+            callback(defaultStore.get(contextStateAtom)),
+        );
     }
 
     /** 订阅情境切换（每次 commit 一次），返回取消函数 */
