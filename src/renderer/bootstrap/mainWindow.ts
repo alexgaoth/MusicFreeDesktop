@@ -23,6 +23,7 @@ import downloadManager from '@infra/downloadManager/renderer';
 import localMusic from '@infra/localMusic/renderer';
 import contextEngine from '@infra/contextEngine/renderer';
 import trackPlayer from '@renderer/mainWindow/core/trackPlayer';
+import contextPlayback from '@renderer/mainWindow/core/contextPlayback';
 import { runPostBootstrapTasks } from './postBootstrap';
 import { setupCommandHandlers } from '@renderer/mainWindow/core/commandHandlers';
 import { syncKV } from '@renderer/common/kvStore';
@@ -72,6 +73,9 @@ export default async function bootstrapMainWindow(): Promise<void> {
 
     // Phase 4: trackPlayer 依赖 pluginManager + musicSheet（恢复状态时需要获取音源）
     await trackPlayer.setup();
+
+    // Phase 4.5: 情境配乐（依赖 trackPlayer + contextEngine + musicSheet）
+    contextPlayback.setup();
 
     // Phase 5: 非播放器相关的 command handler
     setupCommandHandlers();
