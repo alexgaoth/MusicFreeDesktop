@@ -17,6 +17,7 @@
  *   Any window / Main Process  ──→  Main Window Renderer
  */
 
+import type { IContextChange } from '@appTypes/infra/contextEngine';
 import type { IMusicItemSlim } from '@appTypes/infra/musicSheet';
 import type { PlayerState, RepeatMode } from '@common/constant';
 import type { IParsedLrcItem } from '@common/lyricParser';
@@ -68,6 +69,10 @@ export interface ICommand {
     'set-repeat-mode': RepeatMode;
     navigate: string;
     'open-music-detail': void;
+
+    // ─── Context Engine ───
+    /** A context was committed (main process → main window, for the player) */
+    'context-changed': IContextChange;
 }
 
 // ─── MessagePort 内部协议类型 ───

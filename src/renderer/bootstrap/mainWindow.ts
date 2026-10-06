@@ -21,6 +21,7 @@ import musicSheet from '@infra/musicSheet/renderer';
 import mediaMeta from '@infra/mediaMeta/renderer';
 import downloadManager from '@infra/downloadManager/renderer';
 import localMusic from '@infra/localMusic/renderer';
+import contextEngine from '@infra/contextEngine/renderer';
 import trackPlayer from '@renderer/mainWindow/core/trackPlayer';
 import { runPostBootstrapTasks } from './postBootstrap';
 import { setupCommandHandlers } from '@renderer/mainWindow/core/commandHandlers';
@@ -60,6 +61,7 @@ export default async function bootstrapMainWindow(): Promise<void> {
         mediaMeta.setup(),
         downloadManager.setup(),
         localMusic.setup(),
+        contextEngine.setup(),
     ]);
 
     // Phase 3: 依赖 appConfig + appSync 的模块

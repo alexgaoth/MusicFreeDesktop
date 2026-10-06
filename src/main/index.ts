@@ -18,6 +18,7 @@ import mediaMeta from '@infra/mediaMeta/main';
 import downloadManager from '@infra/downloadManager/main';
 import localMusic from '@infra/localMusic/main';
 import backup from '@infra/backup/main';
+import contextEngine from '@infra/contextEngine/main';
 import appTray from '@main/core/appTray';
 import appThumbar from '@main/core/appThumbar';
 import proxyManager from '@main/core/proxyManager';
@@ -148,6 +149,13 @@ async function bootstrapInfra(windowManager: IWindowManager) {
 
     // 注册内建插件
     pluginManager.registerBuiltinPlugin(localPluginDefine, LOCAL_PLUGIN_HASH);
+
+    // 情境引擎（依赖 appConfig + appSync）
+    contextEngine.setup({
+        windowManager,
+        appConfig,
+        commandSender: appSync,
+    });
 }
 
 /** 根据持久化配置恢复窗口状态 */
@@ -204,6 +212,7 @@ app.on('will-quit', async (event) => {
     isCleaningUp = true;
 
     appTray.dispose();
+    contextEngine.dispose();
     musicSheet.dispose();
     downloadManager.dispose();
     requestForwarder.dispose();

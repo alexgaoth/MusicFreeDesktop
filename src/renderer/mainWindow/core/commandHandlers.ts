@@ -6,6 +6,7 @@
  */
 import appConfig from '@infra/appConfig/renderer';
 import appSync from '@infra/appSync/renderer/main';
+import logger from '@infra/logger/renderer';
 import systemUtil from '@infra/systemUtil/renderer';
 import { openFullscreenPlayer } from '@renderer/mainWindow/components/layout/FullscreenPlayer/fullscreenPlayerState';
 import router from '@renderer/mainWindow/router';
@@ -26,5 +27,10 @@ export function setupCommandHandlers(): void {
 
     appSync.onCommand('navigate', (path) => {
         router.navigate('/' + path);
+    });
+
+    // TODO(context-player): switch music on context change (C2). Log only for now.
+    appSync.onCommand('context-changed', (change) => {
+        logger.info('[ContextEngine] context-changed', change);
     });
 }
