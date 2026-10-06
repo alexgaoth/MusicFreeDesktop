@@ -33,7 +33,7 @@ const defaultAppConfig: IAppConfig = {
     'download.intervalJitter': 0,
     'normal.musicListHideColumns': ['duration'],
     'backup.resumeBehavior': 'append',
-    'normal.language': 'zh-CN',
+    // 'normal.language' 不设默认值：未显式选择时由 i18n 按系统语言推断（见 i18n/main.ts）
     'normal.useCustomTrayMenu': true,
 };
 
