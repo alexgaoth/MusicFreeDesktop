@@ -26,6 +26,7 @@ import { ProgressBar, TimeDisplay } from './ProgressBar';
 import VolumePopover from './VolumePopover';
 import SpeedPopover from './SpeedPopover';
 import QualityPopover from './QualityPopover';
+import ContextChip from './ContextChip';
 import './index.scss';
 
 // ─── PlayerBar ───
@@ -171,6 +172,7 @@ export default function PlayerBar() {
 
                 {/* ── 右侧: 工具 ── */}
                 <div className="l-player-bar__right">
+                    <ContextChip />
                     <QualityPopover />
                     <SpeedPopover />
                     <VolumePopover />

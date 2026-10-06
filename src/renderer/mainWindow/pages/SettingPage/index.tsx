@@ -1,8 +1,10 @@
-import { useState, useMemo, type ReactNode } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router';
 import {
     SlidersHorizontal,
     PlayCircle,
+    AudioWaveform,
     Download,
     Mic2,
     Blocks,
@@ -14,6 +16,7 @@ import {
 import { TabBar, type TabItem } from '@renderer/mainWindow/components/ui/TabBar';
 import { GeneralSection } from './sections/GeneralSection';
 import { PlaybackSection } from './sections/PlaybackSection';
+import { ContextSection } from './sections/ContextSection';
 import { DownloadSection } from './sections/DownloadSection';
 import { LyricSection } from './sections/LyricSection';
 import { PluginSection } from './sections/PluginSection';
@@ -28,6 +31,7 @@ import './index.scss';
 const SECTION_MAP: Record<string, () => ReactNode> = {
     general: () => <GeneralSection />,
     playback: () => <PlaybackSection />,
+    context: () => <ContextSection />,
     download: () => <DownloadSection />,
     lyrics: () => <LyricSection />,
     plugins: () => <PluginSection />,
@@ -42,10 +46,18 @@ const SECTION_MAP: Record<string, () => ReactNode> = {
  *
  * 顶部固定标题 + TabBar，下方独立滚动内容区。
  * 每个 tab 对应一个 section 组件，懒渲染。
+ * 当前 tab 存于 URL 查询参数 `?section=`，便于从其他位置直接打开某个 section。
  */
 export default function SettingPage() {
     const { t } = useTranslation();
-    const [activeKey, setActiveKey] = useState('general');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const sectionParam = searchParams.get('section');
+    const activeKey = sectionParam && SECTION_MAP[sectionParam] ? sectionParam : 'general';
+
+    const setActiveKey = useCallback(
+        (key: string) => setSearchParams({ section: key }, { replace: true }),
+        [setSearchParams],
+    );
 
     const sectionTabs: TabItem[] = useMemo(
         () => [
@@ -58,6 +70,11 @@ export default function SettingPage() {
                 key: 'playback',
                 label: t('settings.section_name.playback'),
                 icon: <PlayCircle width={16} height={16} />,
+            },
+            {
+                key: 'context',
+                label: t('settings.section_name.context'),
+                icon: <AudioWaveform width={16} height={16} />,
             },
             {
                 key: 'download',
