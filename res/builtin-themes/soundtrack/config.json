@@ -1,0 +1,8 @@
+{
+    "name": "Soundtrack",
+    "preview": "@/preview.jpg",
+    "author": "Alex Gao",
+    "authorUrl": "https://github.com/alexgaoth",
+    "description": "Dark, cinematic soundtrack-player look. 暗色电影感原声主题",
+    "version": "1.0.1"
+}

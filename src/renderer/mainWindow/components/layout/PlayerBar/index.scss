@@ -156,7 +156,8 @@
     // ── 右侧: 工具 ──
 
     &__right {
-        width: 240px;
+        // Grows past 240px only when the Soundtrack context chip is shown.
+        min-width: 240px;
         flex-shrink: 0;
         display: flex;
         align-items: center;

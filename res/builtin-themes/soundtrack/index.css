@@ -1,0 +1,237 @@
+/*
+ * Soundtrack — dark, cinematic soundtrack-player theme.
+ *
+ * Two runtime variables drive the look. Set them on <html> (documentElement),
+ * because the tokens below resolve them at :root:
+ *   --mf-context-accent  accent colour of the current listening context
+ *                        (buttons, active nav, progress, toggles, focus, links, play button)
+ *   --mf-art-glow        dominant colour of the current album art
+ *                        (soft radial glow at the top of the main content area)
+ * Both have calm fallbacks, so the theme also works with nothing set.
+ *
+ * Note: the theme cache is keyed on config.json. Bump "version" there when this file changes.
+ */
+:root {
+    /* ── Runtime inputs (with fallbacks) ── */
+    --st-accent: var(--mf-context-accent, #7c8cff);
+    --st-glow: var(--mf-art-glow, #4a3fb5);
+
+    /* ── Background: near-black, blue-tinted, layered ── */
+    --color-bg-base: rgb(10, 13, 22); /* #0a0d16 */
+    --color-bg-sidebar: rgba(6, 8, 15, 0.78); /* #06080f */
+    --color-bg-player: rgba(14, 18, 31, 0.72); /* #0e121f glass */
+    --color-bg-surface: rgba(165, 180, 255, 0.04);
+    --color-bg-surface-raised: rgba(165, 180, 255, 0.08);
+    --color-bg-drawer: rgba(13, 17, 29, 0.96);
+    --color-bg-overlay: rgba(3, 4, 10, 0.66);
+    --color-bg-modal: rgb(17, 22, 37); /* #111625 */
+    --color-bg-popover: rgba(19, 24, 41, 0.97); /* #131829 */
+    --color-bg-fullscreen: rgb(7, 9, 16);
+    --color-bg-placeholder: rgb(24, 29, 46); /* #181d2e */
+
+    /* ── Fill: accent follows --mf-context-accent ── */
+    --color-fill-brand: var(--st-accent);
+    --color-fill-brand-hover: color-mix(in srgb, var(--st-accent) 85%, transparent);
+    --color-fill-brand-muted: color-mix(in srgb, var(--st-accent) 16%, transparent);
+    --color-fill-neutral: rgba(190, 200, 255, 0.09);
+    --color-fill-neutral-hover: rgba(190, 200, 255, 0.14);
+    --color-fill-neutral-active: rgba(190, 200, 255, 0.19);
+    --color-fill-subtle: rgba(190, 200, 255, 0.045);
+    --color-fill-subtle-hover: rgba(190, 200, 255, 0.09);
+
+    /* ── Text (all ≥ 4.5:1 on #0a0d16 and #111625, except disabled) ── */
+    --color-text-primary: rgb(234, 237, 247); /* #eaedf7 */
+    --color-text-secondary: rgb(156, 165, 191); /* #9ca5bf, 7.6:1 */
+    --color-text-muted: rgba(234, 237, 247, 0.62);
+    --color-text-placeholder: rgba(234, 237, 247, 0.46);
+    --color-text-disabled: rgba(234, 237, 247, 0.3);
+    --color-text-brand: color-mix(in srgb, var(--st-accent) 88%, white);
+    --color-text-on-brand: rgb(9, 11, 20); /* #090b14 */
+
+    /* ── Border: 1px hairlines at low alpha ── */
+    --color-border-default: rgba(180, 195, 255, 0.085);
+    --color-border-subtle: rgba(180, 195, 255, 0.055);
+    --color-border-strong: rgba(180, 195, 255, 0.15);
+    --color-border-focus: rgba(180, 195, 255, 0.24);
+    --color-border-brand: color-mix(in srgb, var(--st-accent) 38%, transparent);
+
+    /* ── Focus ring ── */
+    --focus-ring: 0 0 0 2px color-mix(in srgb, var(--st-accent) 75%, transparent);
+
+    /* ── Status ── */
+    --color-status-info-bg: rgba(16, 24, 38, 0.96);
+    --color-status-warn-bg: rgba(33, 25, 18, 0.96);
+
+    /* ── Background image: faint top wash + bottom vignette ── */
+    --bg-image:
+        radial-gradient(
+            120% 70% at 0% 0%,
+            color-mix(in srgb, var(--st-accent) 6%, transparent) 0px,
+            transparent 60%
+        ),
+        radial-gradient(140% 90% at 50% 130%, rgba(0, 0, 0, 0.55) 0px, transparent 60%);
+
+    /* ── Radius: 10–14px surfaces ── */
+    --radius-control: 8px;
+    --radius-card: 12px;
+    --radius-panel: 14px;
+    --radius-modal: 14px;
+    --radius-artwork: 14px;
+
+    /* ── Shadow: deep, blue-black ── */
+    --shadow-xs: 0 1px 2px rgba(2, 4, 12, 0.4);
+    --shadow-sm: 0 6px 16px rgba(2, 4, 12, 0.4);
+    --shadow-md: 0 12px 32px -6px rgba(2, 4, 12, 0.6);
+    --shadow-lg: 0 18px 44px -8px rgba(2, 4, 12, 0.7);
+    --shadow-xl: 0 28px 60px -12px rgba(2, 4, 12, 0.8);
+    --shadow-up: 0 -10px 30px rgba(2, 4, 12, 0.45);
+    --shadow-left: -14px 0 40px rgba(2, 4, 12, 0.5);
+
+    /* ── Typography: system stack, CJK fallbacks ── */
+    --font-family:
+        -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable', 'Segoe UI',
+        'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui,
+        sans-serif;
+    --st-font-display:
+        -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI Variable Display',
+        'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC',
+        system-ui, sans-serif;
+    --tracking-tight: -0.022em;
+    --tracking-wide: 0.08em;
+}
+
+/* Without blur the glass would show content through it: make it near-opaque. */
+:root.no-blur {
+    --color-bg-sidebar: rgb(7, 9, 16);
+    --color-bg-player: rgba(14, 18, 31, 0.97);
+}
+
+/* ─────────────────────────── Art glow ─────────────────────────── */
+
+/* Light from the album art: a large, soft, low-opacity radial glow at the top of
+   the main area. It sits behind the content and does not scroll with it. */
+.l-app-shell__main {
+    background-image:
+        radial-gradient(
+            ellipse 80% 460px at 26% -110px,
+            color-mix(in srgb, var(--st-glow) 55%, transparent) 0%,
+            transparent 74%
+        ),
+        radial-gradient(
+            ellipse 55% 360px at 90% -140px,
+            color-mix(in srgb, var(--st-glow) 32%, transparent) 0%,
+            transparent 70%
+        );
+    background-repeat: no-repeat;
+}
+
+/* ─────────────────────────── Typography ─────────────────────────── */
+
+.music-sheet-header__title,
+.p-setting__title,
+.l-fullscreen-player__song-title {
+    font-family: var(--st-font-display);
+    letter-spacing: var(--tracking-tight);
+}
+
+.music-sheet-header__title {
+    font-weight: var(--font-weight-bold);
+}
+
+.p-setting__card-title {
+    letter-spacing: -0.01em;
+}
+
+/* Tabular numerals for every time / count readout */
+.l-player-bar__time,
+.progress-bar__text,
+.song-table__cell,
+.music-sheet-header__meta {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────── Sidebar ─────────────────────────── */
+
+.l-sidebar {
+    border-right-color: var(--color-border-subtle);
+}
+
+.l-sidebar__group-title {
+    font-size: var(--text-overline-size);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+}
+
+.l-sidebar__nav-item {
+    position: relative;
+    height: var(--size-control-md);
+}
+
+.l-sidebar__nav-item.is-active {
+    background-color: var(--color-fill-brand-muted);
+    color: var(--color-text-primary);
+}
+
+/* Accent bar on the active item */
+.l-sidebar__nav-item.is-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 25%;
+    width: 3px;
+    height: 50%;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-fill-brand);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--st-accent) 60%, transparent);
+}
+
+.l-sidebar__nav-item.is-active .l-sidebar__nav-icon {
+    color: var(--color-text-brand);
+}
+
+/* ─────────────────────────── Player bar: glass ─────────────────────────── */
+
+.l-player-bar__body::before {
+    box-shadow: var(--shadow-up);
+    backdrop-filter: blur(var(--blur-xl)) saturate(140%);
+}
+
+.l-player-bar__ctrl-btn--play {
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--st-accent) 40%, transparent),
+        0 6px 22px -4px color-mix(in srgb, var(--st-accent) 55%, transparent);
+}
+
+.l-player-bar__cover {
+    box-shadow:
+        0 8px 22px -6px rgba(2, 4, 12, 0.8),
+        0 0 0 1px var(--color-border-subtle);
+}
+
+/* ─────────────────────────── Artwork ─────────────────────────── */
+
+.artwork {
+    box-shadow:
+        0 14px 34px -10px rgba(2, 4, 12, 0.75),
+        0 0 0 1px rgba(180, 195, 255, 0.06);
+}
+
+.music-sheet-header__cover .artwork {
+    box-shadow:
+        0 22px 50px -14px rgba(2, 4, 12, 0.85),
+        0 0 0 1px rgba(180, 195, 255, 0.07);
+}
+
+/* ─────────────────────────── Surfaces ─────────────────────────── */
+
+.p-setting__card {
+    border-color: var(--color-border-subtle);
+    background: linear-gradient(180deg, rgba(165, 180, 255, 0.05), rgba(165, 180, 255, 0.025));
+    box-shadow: var(--shadow-sm);
+}
+
+.song-table__row.is-active {
+    background-color: color-mix(in srgb, var(--st-accent) 7%, transparent);
+}
